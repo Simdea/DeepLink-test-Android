@@ -1,4 +1,4 @@
-package com.andrer757.deeplinktester
+package com.simdea.deeplinktester
 
 import org.junit.Assert.assertEquals
 import org.junit.Test

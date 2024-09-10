@@ -4,16 +4,25 @@
   <component name="GradleSettings">
     <option name="linkedExternalProjectsSettings">
       <GradleProjectSettings>
+<<<<<<< Updated upstream
         <option name="testRunner" value="GRADLE" />
         <option name="distributionType" value="DEFAULT_WRAPPED" />
+=======
+        <option name="testRunner" value="CHOOSE_PER_TEST" />
+>>>>>>> Stashed changes
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="gradleJvm" value="#GRADLE_LOCAL_JAVA_HOME" />
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/app" />
           </set>
         </option>
+<<<<<<< Updated upstream
         <option name="resolveModulePerSourceSet" value="false" />
+=======
+        <option name="resolveExternalAnnotations" value="false" />
+>>>>>>> Stashed changes
       </GradleProjectSettings>
     </option>
   </component>
