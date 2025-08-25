@@ -14,8 +14,13 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -144,11 +149,20 @@ fun AppNavigation() {
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun MainScreen(
     onLaunch: (Deeplink) -> Unit
 ) {
     var text by remember { mutableStateOf("") }
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    val submit = {
+        if (text.isNotBlank()) {
+            onLaunch(Deeplink(deeplink = text))
+            keyboardController?.hide()
+        }
+    }
 
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -159,14 +173,13 @@ fun MainScreen(
             value = text,
             onValueChange = { text = it },
             label = { Text(stringResource(R.string.deeplink_label)) },
-            modifier = Modifier.width(300.dp)
+            modifier = Modifier.width(300.dp),
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = { submit() })
         )
         Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = {
-            if (text.isNotBlank()) {
-                onLaunch(Deeplink(deeplink = text))
-            }
-        }) {
+        Button(onClick = submit) {
             Text(stringResource(R.string.open_deeplink_button))
         }
     }
