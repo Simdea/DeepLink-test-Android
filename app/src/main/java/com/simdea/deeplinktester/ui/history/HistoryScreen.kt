@@ -1,6 +1,8 @@
 package com.simdea.deeplinktester.ui.history
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.ui.res.stringResource
+import com.simdea.deeplinktester.R
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
