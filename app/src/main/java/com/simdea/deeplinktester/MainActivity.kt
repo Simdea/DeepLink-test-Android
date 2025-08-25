@@ -1,6 +1,7 @@
 package com.simdea.deeplinktester
 
 import android.app.Application
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -17,10 +18,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import com.simdea.deeplinktester.R
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -32,6 +31,7 @@ import com.simdea.deeplinktester.ui.ads.BannerAd
 import com.simdea.deeplinktester.ui.history.HistoryScreen
 import com.simdea.deeplinktester.ui.history.HistoryViewModel
 import com.simdea.deeplinktester.ui.theme.DeepLinkTestAndroidTheme
+import kotlinx.coroutines.launch
 
 sealed class Screen(val route: String, val resourceId: Int, val icon: @Composable () -> Unit) {
     object Main : Screen("main", R.string.main_screen_title, { Icon(Icons.Filled.Home, contentDescription = null) })
@@ -64,8 +64,11 @@ fun AppNavigation() {
             context.applicationContext as Application
         )
     )
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             Column {
                 BannerAd()
@@ -97,11 +100,20 @@ fun AppNavigation() {
                 MainScreen(
                     onLaunch = { deeplink ->
                         historyViewModel.addDeeplink(deeplink)
-                        val launchBrowser = Intent(Intent.ACTION_VIEW).apply {
-                            data = Uri.parse(deeplink.deeplink)
-                            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                        try {
+                            val launchBrowser = Intent(Intent.ACTION_VIEW).apply {
+                                data = Uri.parse(deeplink.deeplink)
+                                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                            }
+                            context.startActivity(launchBrowser)
+                        } catch (e: ActivityNotFoundException) {
+                            scope.launch {
+                                snackbarHostState.showSnackbar(
+                                    message = context.getString(R.string.activity_not_found_error),
+                                    duration = SnackbarDuration.Short
+                                )
+                            }
                         }
-                        context.startActivity(launchBrowser)
                     }
                 )
             }
@@ -110,11 +122,20 @@ fun AppNavigation() {
                 HistoryScreen(
                     history = history,
                     onRetry = { deeplink ->
-                        val launchBrowser = Intent(Intent.ACTION_VIEW).apply {
-                            data = Uri.parse(deeplink.deeplink)
-                            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                        try {
+                            val launchBrowser = Intent(Intent.ACTION_VIEW).apply {
+                                data = Uri.parse(deeplink.deeplink)
+                                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                            }
+                            context.startActivity(launchBrowser)
+                        } catch (e: ActivityNotFoundException) {
+                            scope.launch {
+                                snackbarHostState.showSnackbar(
+                                    message = context.getString(R.string.activity_not_found_error),
+                                    duration = SnackbarDuration.Short
+                                )
+                            }
                         }
-                        context.startActivity(launchBrowser)
                     },
                     onRemove = { historyViewModel.removeDeeplink(it) }
                 )
