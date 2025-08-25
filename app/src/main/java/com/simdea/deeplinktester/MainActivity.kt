@@ -7,22 +7,40 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.simdea.deeplinktester.data.Deeplink
+import com.simdea.deeplinktester.ui.ads.BannerAd
 import com.simdea.deeplinktester.ui.history.HistoryScreen
 import com.simdea.deeplinktester.ui.history.HistoryViewModel
 import com.simdea.deeplinktester.ui.theme.DeepLinkTestAndroidTheme
+
+sealed class Screen(val route: String, val resourceId: Int, val icon: @Composable () -> Unit) {
+    object Main : Screen("main", R.string.main_screen_title, { Icon(Icons.Filled.Home, contentDescription = null) })
+    object History : Screen("history", R.string.history_screen_title, { Icon(Icons.Filled.History, contentDescription = null) })
+}
+
+val items = listOf(
+    Screen.Main,
+    Screen.History
+)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -47,16 +65,35 @@ fun AppNavigation() {
     )
 
     Scaffold(
-        bottomBar = { com.simdea.deeplinktester.ui.ads.BannerAd() }
-    ) { paddingValues ->
-        NavHost(
-            navController = navController,
-            startDestination = "main",
-            modifier = Modifier.padding(paddingValues)
-        ) {
-            composable("main") {
+        bottomBar = {
+            Column {
+                BannerAd()
+                NavigationBar {
+                    val navBackStackEntry by navController.currentBackStackEntryAsState()
+                    val currentDestination = navBackStackEntry?.destination
+                    items.forEach { screen ->
+                        NavigationBarItem(
+                            icon = { screen.icon() },
+                            label = { Text(stringResource(screen.resourceId)) },
+                            selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
+                            onClick = {
+                                navController.navigate(screen.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            }
+                        )
+                    }
+                }
+            }
+        }
+    ) { innerPadding ->
+        NavHost(navController, startDestination = Screen.Main.route, Modifier.padding(innerPadding)) {
+            composable(Screen.Main.route) {
                 MainScreen(
-                    onNavigateToHistory = { navController.navigate("history") },
                     onLaunch = { deeplink ->
                         historyViewModel.addDeeplink(deeplink)
                         val launchBrowser = Intent(Intent.ACTION_VIEW).apply {
@@ -67,7 +104,7 @@ fun AppNavigation() {
                     }
                 )
             }
-            composable("history") {
+            composable(Screen.History.route) {
                 val history by historyViewModel.history.collectAsState()
                 HistoryScreen(
                     history = history,
@@ -87,7 +124,6 @@ fun AppNavigation() {
 
 @Composable
 fun MainScreen(
-    onNavigateToHistory: () -> Unit,
     onLaunch: (Deeplink) -> Unit
 ) {
     var text by remember { mutableStateOf("") }
@@ -111,10 +147,6 @@ fun MainScreen(
         }) {
             Text(stringResource(R.string.open_deeplink_button))
         }
-        Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = onNavigateToHistory) {
-            Text(stringResource(R.string.history_button))
-        }
     }
 }
 
@@ -122,6 +154,6 @@ fun MainScreen(
 @Composable
 fun DefaultPreview() {
     DeepLinkTestAndroidTheme {
-        MainScreen(onNavigateToHistory = {}, onLaunch = {})
+        MainScreen(onLaunch = {})
     }
 }
