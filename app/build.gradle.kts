@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.kapt)
     alias(libs.plugins.kotlin.parcelize)
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -45,6 +46,10 @@ dependencies {
     implementation(libs.play.services.ads)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
+    implementation(platform("com.google.firebase:firebase-bom:34.1.0"))
+    implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.firebase:firebase-crashlytics")
+    implementation("com.google.android.gms:play-services-ads")
     kapt(libs.androidx.room.compiler)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
