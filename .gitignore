@@ -14,3 +14,6 @@
 .cxx
 
 .idea/
+keystore/
+commandlinetools-linux-*.zip
+android-sdk/
