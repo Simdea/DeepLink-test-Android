@@ -15,7 +15,7 @@ fun BannerAd(modifier: Modifier = Modifier) {
         factory = { context ->
             val adView = AdView(context)
             adView.setAdSize(AdSize.BANNER)
-            adView.adUnitId = "ca-app-pub-3940256099942544/6300978111" // Test ad unit ID
+            adView.adUnitId = "ca-app-pub-6371453241242670/7179289810" // Test ad unit ID
             adView.loadAd(AdRequest.Builder().build())
             adView
         }
