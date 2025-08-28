@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">DeepLinkTester</string>
+    <string name="main_screen_title">Main</string>
+    <string name="history_screen_title">History</string>
+    <string name="deeplink_label">DeepLink</string>
+    <string name="open_deeplink_button">Open DeepLink</string>
+    <string name="remove_deeplink_dialog_title">Remove Deeplink</string>
+    <string name="remove_deeplink_dialog_text">Are you sure you want to remove this deeplink from your history?</string>
+    <string name="remove_button">Remove</string>
+    <string name="cancel_button">Cancel</string>
+    <string name="retry_button">Retry</string>
+    <string name="activity_not_found_error">No app found to handle this deeplink.</string>
+</resources>

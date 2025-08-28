@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "670843635296",
+    "firebase_url": "https://deeplinktester-e07a5.firebaseio.com",
+    "project_id": "deeplinktester-e07a5",
+    "storage_bucket": "deeplinktester-e07a5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:670843635296:android:e5e84120f68bdbb1812505",
+        "android_client_info": {
+          "package_name": "com.simdea.deeplinktester"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBRQ_4bSOLgji-rRd7n8QzbDXw4Xt42nDk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
