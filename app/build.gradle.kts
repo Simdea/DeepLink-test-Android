@@ -1,9 +1,15 @@
+import androidx.room.gradle.RoomExtension
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
     alias(libs.plugins.room)
+}
+
+configure<RoomExtension> {
+    schemaDirectory("$projectDir/schemas")
 }
 
 android {
