@@ -13,11 +13,14 @@ process faster and more efficient.
 ## Features
 
 -   **Test any deeplink:** Enter any URI and launch it directly from the app.
--   **History:** Automatically saves a history of all tested deeplinks.
--   **Retry:** Quickly re-test any deeplink from your history with a single tap.
--   **Remove:** Clean up your history by removing individual entries.
--   **Error Handling:** The app gracefully handles cases where no application can open the deeplink, preventing crashes and providing user-friendly feedback.
--   **Ad-Supported:** Includes a banner ad for monetization, implemented with Google AdMob.
+-   **QR Code Scanner:** Scan QR codes to instantly populate the deeplink input field.
+-   **URI Parameter Editor:** Easily add, edit, and remove query parameters from your deeplinks.
+-   **Syntax Validation:** Get real-time feedback on the validity of your URI syntax.
+-   **History & Favorites:** Automatically saves a history of all tested deeplinks, with the ability to mark your most-used links as favorites.
+-   **Retry & Remove:** Quickly re-test any deeplink from your history or remove it.
+-   **Export/Import:** Export your history to a JSON file to share with colleagues or back it up, and import it back into the app.
+-   **Error Handling:** The app gracefully handles cases where no application can open the deeplink, preventing crashes.
+-   **Ad-Supported:** Includes a banner ad for monetization.
 
 ## Tech Stack
 

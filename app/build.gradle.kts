@@ -46,6 +46,12 @@ android {
 
 dependencies {
     implementation(libs.play.services.ads)
+    implementation(libs.androidx.camera.core)
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.androidx.camera.view)
+    implementation(libs.mlkit.barcode.scanning)
+    implementation(libs.gson)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     implementation(platform("com.google.firebase:firebase-bom:34.1.0"))

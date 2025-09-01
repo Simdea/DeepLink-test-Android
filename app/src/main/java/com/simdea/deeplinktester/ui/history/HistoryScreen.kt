@@ -1,24 +1,29 @@
 package com.simdea.deeplinktester.ui.history
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.ui.res.stringResource
-import com.simdea.deeplinktester.R
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.simdea.deeplinktester.R
 import com.simdea.deeplinktester.data.Deeplink
 
 @Composable
 fun HistoryScreen(
     history: List<Deeplink>,
     onRetry: (Deeplink) -> Unit,
-    onRemove: (Deeplink) -> Unit
+    onRemove: (Deeplink) -> Unit,
+    onToggleFavorite: (Deeplink) -> Unit
 ) {
     var showDialog by remember { mutableStateOf<Deeplink?>(null) }
+    var showOnlyFavorites by remember { mutableStateOf(false) }
 
     showDialog?.let { deeplinkToRemove ->
         AlertDialog(
@@ -43,17 +48,41 @@ fun HistoryScreen(
         )
     }
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp)
-    ) {
-        items(history) { deeplink ->
-            HistoryItem(
-                deeplink = deeplink,
-                onRetry = { onRetry(deeplink) },
-                onRemove = { showDialog = deeplink }
+    Column(modifier = Modifier.fillMaxSize()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.End
+        ) {
+            Text("Show only favorites")
+            Spacer(modifier = Modifier.width(8.dp))
+            Switch(
+                checked = showOnlyFavorites,
+                onCheckedChange = { showOnlyFavorites = it }
             )
-            Spacer(modifier = Modifier.height(8.dp))
+        }
+
+        val filteredHistory = if (showOnlyFavorites) {
+            history.filter { it.isFavorite }
+        } else {
+            history
+        }
+
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(16.dp)
+        ) {
+            items(filteredHistory) { deeplink ->
+                HistoryItem(
+                    deeplink = deeplink,
+                    onRetry = { onRetry(deeplink) },
+                    onRemove = { showDialog = deeplink },
+                    onToggleFavorite = { onToggleFavorite(deeplink) }
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
         }
     }
 }
@@ -62,7 +91,8 @@ fun HistoryScreen(
 fun HistoryItem(
     deeplink: Deeplink,
     onRetry: () -> Unit,
-    onRemove: () -> Unit
+    onRemove: () -> Unit,
+    onToggleFavorite: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth()
@@ -74,9 +104,15 @@ fun HistoryItem(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
+            IconButton(onClick = onToggleFavorite) {
+                Icon(
+                    imageVector = if (deeplink.isFavorite) Icons.Filled.Star else Icons.Outlined.Star,
+                    contentDescription = "Favorite"
+                )
+            }
             Text(
                 text = deeplink.deeplink,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f).padding(horizontal = 8.dp)
             )
             Row {
                 Button(onClick = onRetry) {

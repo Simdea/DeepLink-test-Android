@@ -10,4 +10,8 @@
     <string name="cancel_button">Cancel</string>
     <string name="retry_button">Retry</string>
     <string name="activity_not_found_error">No app found to handle this deeplink.</string>
+    <string name="qr_scanner_title">QR Scanner</string>
+    <string name="parameter_editor_title">Parameter Editor</string>
+    <string name="invalid_uri_error">Invalid URI format</string>
+    <string name="settings_screen_title">Settings</string>
 </resources>

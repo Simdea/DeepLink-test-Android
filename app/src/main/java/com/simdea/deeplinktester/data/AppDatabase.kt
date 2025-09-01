@@ -5,7 +5,14 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [Deeplink::class], version = 1, exportSchema = false)
+@Database(
+    entities = [Deeplink::class],
+    version = 2,
+    autoMigrations = [
+        androidx.room.AutoMigration(from = 1, to = 2)
+    ],
+    exportSchema = true
+)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun deeplinkDao(): DeeplinkDao
