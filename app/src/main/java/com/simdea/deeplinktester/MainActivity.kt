@@ -218,11 +218,14 @@ fun AppNavigation() {
                 )
             }
             composable(Screen.QrScanner.route) {
-                QrCodeScannerScreen(onQrCodeScanned = { deeplink ->
-                    navController.navigate("${Screen.Main.route}?scannedDeeplink=$deeplink") {
-                        popUpTo(Screen.Main.route) { inclusive = true }
-                    }
-                })
+                QrCodeScannerScreen(
+                    onQrCodeScanned = { deeplink ->
+                        navController.navigate("${Screen.Main.route}?scannedDeeplink=$deeplink") {
+                            popUpTo(Screen.Main.route) { inclusive = true }
+                        }
+                    },
+                    onBack = { navController.popBackStack() }
+                )
             }
             composable(
                 route = "${Screen.ParameterEditor.route}/{deeplink}",
@@ -298,7 +301,10 @@ fun MainScreen(
             IconButton(onClick = onScanQrCode) {
                 Icon(Icons.Filled.QrCodeScanner, contentDescription = "Scan QR Code")
             }
-            IconButton(onClick = { onEditParameters(text) }) {
+            IconButton(
+                onClick = { onEditParameters(text) },
+                enabled = !isError && text.isNotBlank()
+            ) {
                 Icon(Icons.Filled.Edit, contentDescription = "Edit Parameters")
             }
         }
