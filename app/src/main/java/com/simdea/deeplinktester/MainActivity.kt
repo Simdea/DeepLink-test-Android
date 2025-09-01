@@ -6,11 +6,14 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,34 +21,48 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import com.simdea.deeplinktester.data.Deeplink
 import com.simdea.deeplinktester.ui.ads.BannerAd
+import com.simdea.deeplinktester.ui.editor.ParameterEditorScreen
 import com.simdea.deeplinktester.ui.history.HistoryScreen
 import com.simdea.deeplinktester.ui.history.HistoryViewModel
+import com.simdea.deeplinktester.ui.scanner.QrCodeScannerScreen
+import com.simdea.deeplinktester.ui.settings.SettingsScreen
 import com.simdea.deeplinktester.ui.theme.DeepLinkTestAndroidTheme
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import java.io.BufferedReader
+import java.io.FileOutputStream
+import java.io.InputStreamReader
+import java.net.URLEncoder
 
 sealed class Screen(val route: String, val resourceId: Int, val icon: @Composable () -> Unit) {
     object Main : Screen("main", R.string.main_screen_title, { Icon(Icons.Filled.Home, contentDescription = null) })
     object History : Screen("history", R.string.history_screen_title, { Icon(Icons.Filled.History, contentDescription = null) })
+    object Settings : Screen("settings", R.string.settings_screen_title, { Icon(Icons.Filled.Settings, contentDescription = null) })
+    object QrScanner : Screen("qrScanner", R.string.qr_scanner_title, { Icon(Icons.Filled.QrCodeScanner, contentDescription = null) })
+    object ParameterEditor : Screen("parameterEditor", R.string.parameter_editor_title, { Icon(Icons.Filled.Edit, contentDescription = null) })
 }
 
 val items = listOf(
     Screen.Main,
-    Screen.History
+    Screen.History,
+    Screen.Settings
 )
 
 class MainActivity : ComponentActivity() {
@@ -71,6 +88,40 @@ fun AppNavigation() {
     )
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val gson = Gson()
+
+    val exportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        uri?.let {
+            scope.launch {
+                val history = historyViewModel.history.first()
+                val json = gson.toJson(history)
+                context.contentResolver.openOutputStream(it)?.use { outputStream ->
+                    outputStream.write(json.toByteArray())
+                }
+            }
+        }
+    }
+
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        uri?.let {
+            scope.launch {
+                context.contentResolver.openInputStream(it)?.use { inputStream ->
+                    val reader = BufferedReader(InputStreamReader(inputStream))
+                    val json = reader.readText()
+                    val type = object : TypeToken<List<Deeplink>>() {}.type
+                    val importedHistory: List<Deeplink> = gson.fromJson(json, type)
+                    val currentHistory = historyViewModel.history.first()
+                    val currentDeeplinks = currentHistory.map { it.deeplink }.toSet()
+                    val newDeeplinks = importedHistory.filter { !currentDeeplinks.contains(it.deeplink) }
+                    newDeeplinks.forEach { historyViewModel.addDeeplink(it) }
+                }
+            }
+        }
+    }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -101,8 +152,16 @@ fun AppNavigation() {
         }
     ) { innerPadding ->
         NavHost(navController, startDestination = Screen.Main.route, Modifier.padding(innerPadding)) {
-            composable(Screen.Main.route) {
+            composable(
+                route = "${Screen.Main.route}?scannedDeeplink={scannedDeeplink}&editedDeeplink={editedDeeplink}",
+                arguments = listOf(
+                    navArgument("scannedDeeplink") { type = NavType.StringType; nullable = true },
+                    navArgument("editedDeeplink") { type = NavType.StringType; nullable = true }
+                )
+            ) { backStackEntry ->
                 MainScreen(
+                    scannedDeeplink = backStackEntry.arguments?.getString("scannedDeeplink"),
+                    editedDeeplink = backStackEntry.arguments?.getString("editedDeeplink"),
                     onLaunch = { deeplink ->
                         historyViewModel.addDeeplink(deeplink)
                         try {
@@ -119,6 +178,11 @@ fun AppNavigation() {
                                 )
                             }
                         }
+                    },
+                    onScanQrCode = { navController.navigate(Screen.QrScanner.route) },
+                    onEditParameters = { deeplink ->
+                        val encodedDeeplink = URLEncoder.encode(deeplink, "UTF-8")
+                        navController.navigate("${Screen.ParameterEditor.route}/$encodedDeeplink")
                     }
                 )
             }
@@ -142,7 +206,34 @@ fun AppNavigation() {
                             }
                         }
                     },
-                    onRemove = { historyViewModel.removeDeeplink(it) }
+                    onRemove = { historyViewModel.removeDeeplink(it) },
+                    onToggleFavorite = { historyViewModel.toggleFavorite(it) }
+                )
+            }
+            composable(Screen.Settings.route) {
+                SettingsScreen(
+                    onExport = { exportLauncher.launch("deeplink_history.json") },
+                    onImport = { importLauncher.launch(arrayOf("application/json")) }
+                )
+            }
+            composable(Screen.QrScanner.route) {
+                QrCodeScannerScreen(onQrCodeScanned = { deeplink ->
+                    navController.navigate("${Screen.Main.route}?scannedDeeplink=$deeplink") {
+                        popUpTo(Screen.Main.route) { inclusive = true }
+                    }
+                })
+            }
+            composable(
+                route = "${Screen.ParameterEditor.route}/{deeplink}",
+                arguments = listOf(navArgument("deeplink") { type = NavType.StringType })
+            ) { backStackEntry ->
+                ParameterEditorScreen(
+                    deeplink = backStackEntry.arguments?.getString("deeplink") ?: "",
+                    onApply = { editedDeeplink ->
+                        navController.navigate("${Screen.Main.route}?editedDeeplink=$editedDeeplink") {
+                            popUpTo(Screen.Main.route) { inclusive = true }
+                        }
+                    }
                 )
             }
         }
@@ -152,13 +243,28 @@ fun AppNavigation() {
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun MainScreen(
-    onLaunch: (Deeplink) -> Unit
+    scannedDeeplink: String?,
+    editedDeeplink: String?,
+    onLaunch: (Deeplink) -> Unit,
+    onScanQrCode: () -> Unit,
+    onEditParameters: (String) -> Unit
 ) {
-    var text by remember { mutableStateOf("") }
+    var text by remember { mutableStateOf(scannedDeeplink ?: editedDeeplink ?: "") }
+    var isError by remember { mutableStateOf(false) }
     val keyboardController = LocalSoftwareKeyboardController.current
 
+    fun validate(input: String) {
+        isError = try {
+            URI(input)
+            false
+        } catch (e: Exception) {
+            true
+        }
+    }
+
     val submit = {
-        if (text.isNotBlank()) {
+        validate(text)
+        if (text.isNotBlank() && !isError) {
             onLaunch(Deeplink(deeplink = text))
             keyboardController?.hide()
         }
@@ -169,15 +275,32 @@ fun MainScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        OutlinedTextField(
-            value = text,
-            onValueChange = { text = it },
-            label = { Text(stringResource(R.string.deeplink_label)) },
-            modifier = Modifier.width(300.dp),
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-            keyboardActions = KeyboardActions(onDone = { submit() })
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            OutlinedTextField(
+                value = text,
+                onValueChange = {
+                    text = it
+                    validate(it)
+                },
+                label = { Text(stringResource(R.string.deeplink_label)) },
+                modifier = Modifier.width(300.dp),
+                singleLine = true,
+                isError = isError,
+                supportingText = {
+                    if (isError) {
+                        Text(stringResource(R.string.invalid_uri_error))
+                    }
+                },
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { submit() })
+            )
+            IconButton(onClick = onScanQrCode) {
+                Icon(Icons.Filled.QrCodeScanner, contentDescription = "Scan QR Code")
+            }
+            IconButton(onClick = { onEditParameters(text) }) {
+                Icon(Icons.Filled.Edit, contentDescription = "Edit Parameters")
+            }
+        }
         Spacer(modifier = Modifier.height(16.dp))
         Button(onClick = submit) {
             Text(stringResource(R.string.open_deeplink_button))
@@ -189,6 +312,6 @@ fun MainScreen(
 @Composable
 fun DefaultPreview() {
     DeepLinkTestAndroidTheme {
-        MainScreen(onLaunch = {})
+        MainScreen(scannedDeeplink = null, editedDeeplink = null, onLaunch = {}, onScanQrCode = {}, onEditParameters = {})
     }
 }

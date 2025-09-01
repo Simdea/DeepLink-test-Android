@@ -34,6 +34,12 @@ class HistoryViewModel(private val deeplinkDao: DeeplinkDao) : ViewModel() {
         }
     }
 
+    fun toggleFavorite(deeplink: Deeplink) {
+        viewModelScope.launch {
+            deeplinkDao.update(deeplink.copy(isFavorite = !deeplink.isFavorite))
+        }
+    }
+
     class HistoryViewModelFactory(private val application: Application) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(HistoryViewModel::class.java)) {

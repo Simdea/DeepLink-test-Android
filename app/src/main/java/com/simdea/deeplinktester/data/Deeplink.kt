@@ -8,5 +8,6 @@ data class Deeplink(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
     val deeplink: String,
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = System.currentTimeMillis(),
+    val isFavorite: Boolean = false
 )
