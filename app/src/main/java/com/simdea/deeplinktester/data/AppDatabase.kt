@@ -8,10 +8,7 @@ import androidx.room.RoomDatabase
 @Database(
     entities = [Deeplink::class],
     version = 2,
-    autoMigrations = [
-        androidx.room.AutoMigration(from = 1, to = 2)
-    ],
-    exportSchema = true
+    exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
 
@@ -27,7 +24,7 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "deeplink_database"
-                ).build()
+                ).fallbackToDestructiveMigration(false).build()
                 INSTANCE = instance
                 instance
             }

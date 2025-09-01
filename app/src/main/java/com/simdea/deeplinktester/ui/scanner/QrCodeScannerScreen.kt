@@ -11,6 +11,10 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -23,8 +27,12 @@ import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
 import java.util.concurrent.Executors
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun QrCodeScannerScreen(onQrCodeScanned: (String) -> Unit) {
+fun QrCodeScannerScreen(
+    onQrCodeScanned: (String) -> Unit,
+    onBack: () -> Unit
+) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     var hasCameraPermission by remember {
@@ -48,63 +56,80 @@ fun QrCodeScannerScreen(onQrCodeScanned: (String) -> Unit) {
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        if (hasCameraPermission) {
-            AndroidView(
-                factory = { context ->
-                    val previewView = PreviewView(context)
-                    val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
-                    cameraProviderFuture.addListener({
-                        val cameraProvider = cameraProviderFuture.get()
-                        val preview = Preview.Builder().build().also {
-                            it.setSurfaceProvider(previewView.surfaceProvider)
-                        }
-                        val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Scan QR Code") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                }
+            )
+        }
+    ) { paddingValues ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
+            if (hasCameraPermission) {
+                AndroidView(
+                    factory = { context ->
+                        val previewView = PreviewView(context)
+                        val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
+                        cameraProviderFuture.addListener({
+                            val cameraProvider = cameraProviderFuture.get()
+                            val preview = Preview.Builder().build().also {
+                                it.setSurfaceProvider(previewView.surfaceProvider)
+                            }
+                            val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
-                        val options = BarcodeScannerOptions.Builder()
-                            .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
-                            .build()
-                        val scanner = BarcodeScanning.getClient(options)
+                            val options = BarcodeScannerOptions.Builder()
+                                .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
+                                .build()
+                            val scanner = BarcodeScanning.getClient(options)
 
-                        val imageAnalysis = ImageAnalysis.Builder()
-                            .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                            .build()
-                            .also {
-                                it.setAnalyzer(Executors.newSingleThreadExecutor()) { imageProxy ->
-                                    val image = imageProxy.image
-                                    if (image != null) {
-                                        val inputImage = InputImage.fromMediaImage(image, imageProxy.imageInfo.rotationDegrees)
-                                        scanner.process(inputImage)
-                                            .addOnSuccessListener { barcodes ->
-                                                for (barcode in barcodes) {
-                                                    barcode.rawValue?.let {
-                                                        onQrCodeScanned(it)
+                            val imageAnalysis = ImageAnalysis.Builder()
+                                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                                .build()
+                                .also {
+                                    it.setAnalyzer(Executors.newSingleThreadExecutor()) { imageProxy ->
+                                        val image = imageProxy.image
+                                        if (image != null) {
+                                            val inputImage = InputImage.fromMediaImage(image, imageProxy.imageInfo.rotationDegrees)
+                                            scanner.process(inputImage)
+                                                .addOnSuccessListener { barcodes ->
+                                                    for (barcode in barcodes) {
+                                                        barcode.rawValue?.let {
+                                                            onQrCodeScanned(it)
+                                                        }
                                                     }
                                                 }
-                                            }
-                                            .addOnCompleteListener {
-                                                imageProxy.close()
-                                            }
+                                                .addOnCompleteListener {
+                                                    imageProxy.close()
+                                                }
+                                        }
                                     }
                                 }
-                            }
 
-                        try {
-                            cameraProvider.unbindAll()
-                            cameraProvider.bindToLifecycle(
-                                lifecycleOwner,
-                                cameraSelector,
-                                preview,
-                                imageAnalysis
-                            )
-                        } catch (e: Exception) {
-                            // Handle exceptions
-                        }
-                    }, ContextCompat.getMainExecutor(context))
-                    previewView
-                },
-                modifier = Modifier.fillMaxSize()
-            )
+                            try {
+                                cameraProvider.unbindAll()
+                                cameraProvider.bindToLifecycle(
+                                    lifecycleOwner,
+                                    cameraSelector,
+                                    preview,
+                                    imageAnalysis
+                                )
+                            } catch (e: Exception) {
+                                // Handle exceptions
+                            }
+                        }, ContextCompat.getMainExecutor(context))
+                        previewView
+                    },
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
         }
     }
 }

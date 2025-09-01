@@ -50,6 +50,7 @@ import kotlinx.coroutines.launch
 import java.io.BufferedReader
 import java.io.FileOutputStream
 import java.io.InputStreamReader
+import java.net.URI
 import java.net.URLEncoder
 
 sealed class Screen(val route: String, val resourceId: Int, val icon: @Composable () -> Unit) {
@@ -219,11 +220,14 @@ fun AppNavigation() {
                 )
             }
             composable(Screen.QrScanner.route) {
-                QrCodeScannerScreen(onQrCodeScanned = { deeplink ->
-                    navController.navigate("${Screen.Main.route}?scannedDeeplink=$deeplink") {
-                        popUpTo(Screen.Main.route) { inclusive = true }
-                    }
-                })
+                QrCodeScannerScreen(
+                    onQrCodeScanned = { deeplink ->
+                        navController.navigate("${Screen.Main.route}?scannedDeeplink=$deeplink") {
+                            popUpTo(Screen.Main.route) { inclusive = true }
+                        }
+                    },
+                    onBack = { navController.popBackStack() }
+                )
             }
             composable(
                 route = "${Screen.ParameterEditor.route}/{deeplink}",
@@ -299,7 +303,10 @@ fun MainScreen(
             IconButton(onClick = onScanQrCode) {
                 Icon(Icons.Filled.QrCodeScanner, contentDescription = "Scan QR Code")
             }
-            IconButton(onClick = { onEditParameters(text) }) {
+            IconButton(
+                onClick = { onEditParameters(text) },
+                enabled = !isError && text.isNotBlank()
+            ) {
                 Icon(Icons.Filled.Edit, contentDescription = "Edit Parameters")
             }
         }

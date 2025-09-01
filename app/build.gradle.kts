@@ -1,11 +1,18 @@
+import androidx.room.gradle.RoomExtension
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.kapt)
     alias(libs.plugins.kotlin.parcelize)
+    alias(libs.plugins.room)
     id("com.google.gms.google-services")
     id("com.google.firebase.crashlytics")
+}
+
+configure<RoomExtension> {
+    schemaDirectory("$projectDir/schemas")
 }
 
 android {
@@ -54,7 +61,7 @@ dependencies {
     implementation(libs.gson)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
-    implementation(platform("com.google.firebase:firebase-bom:34.1.0"))
+    implementation(platform("com.google.firebase:firebase-bom:34.2.0"))
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-crashlytics")
     implementation("com.google.android.gms:play-services-ads")
