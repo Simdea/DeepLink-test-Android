@@ -74,7 +74,10 @@ fun HistoryScreen(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(16.dp)
         ) {
-            items(filteredHistory) { deeplink ->
+            items(
+                items = filteredHistory,
+                key = { deeplink -> deeplink.id }
+            ) { deeplink ->
                 HistoryItem(
                     deeplink = deeplink,
                     onRetry = { onRetry(deeplink) },

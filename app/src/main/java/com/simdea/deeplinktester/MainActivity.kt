@@ -212,7 +212,7 @@ fun AppNavigation() {
             composable(Screen.Settings.route) {
                 SettingsScreen(
                     onExport = { exportLauncher.launch("deeplink_history.json") },
-                    onImport = { importLauncher.launch(arrayOf("application/json")) }
+                    onImport = { importLauncher.launch(arrayOf("*/*")) }
                 )
             }
             composable(Screen.QrScanner.route) {
