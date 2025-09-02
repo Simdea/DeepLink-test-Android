@@ -48,6 +48,7 @@ import com.simdea.deeplinktester.ui.theme.DeepLinkTestAndroidTheme
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.io.BufferedReader
+import java.net.URI
 import java.io.FileOutputStream
 import java.io.InputStreamReader
 import java.net.URI
