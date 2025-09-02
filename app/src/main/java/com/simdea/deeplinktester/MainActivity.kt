@@ -47,9 +47,8 @@ import com.simdea.deeplinktester.ui.theme.DeepLinkTestAndroidTheme
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.io.BufferedReader
-import java.net.URI
-import java.io.FileOutputStream
 import java.io.InputStreamReader
+import java.net.URI
 import java.net.URLEncoder
 
 sealed class Screen(val route: String, val resourceId: Int, val icon: @Composable () -> Unit) {
@@ -154,15 +153,14 @@ fun AppNavigation() {
     ) { innerPadding ->
         NavHost(navController, startDestination = Screen.Main.route, Modifier.padding(innerPadding)) {
             composable(
-                route = "${Screen.Main.route}?scannedDeeplink={scannedDeeplink}&editedDeeplink={editedDeeplink}",
-                arguments = listOf(
-                    navArgument("scannedDeeplink") { type = NavType.StringType; nullable = true },
-                    navArgument("editedDeeplink") { type = NavType.StringType; nullable = true }
-                )
+                route = "${Screen.Main.route}?deeplink={deeplink}",
+                arguments = listOf(navArgument("deeplink") {
+                    type = NavType.StringType
+                    nullable = true
+                })
             ) { backStackEntry ->
                 MainScreen(
-                    scannedDeeplink = backStackEntry.arguments?.getString("scannedDeeplink"),
-                    editedDeeplink = backStackEntry.arguments?.getString("editedDeeplink"),
+                    initialDeeplink = backStackEntry.arguments?.getString("deeplink"),
                     onLaunch = { deeplink ->
                         historyViewModel.addDeeplink(deeplink)
                         try {
@@ -183,7 +181,7 @@ fun AppNavigation() {
                     onScanQrCode = { navController.navigate(Screen.QrScanner.route) },
                     onEditParameters = { deeplink ->
                         val encodedDeeplink = URLEncoder.encode(deeplink, "UTF-8")
-                        navController.navigate("${Screen.ParameterEditor.route}/$encodedDeeplink")
+                        navController.navigate("${Screen.ParameterEditor.route}?deeplink=$encodedDeeplink")
                     }
                 )
             }
@@ -220,7 +218,8 @@ fun AppNavigation() {
             composable(Screen.QrScanner.route) {
                 QrCodeScannerScreen(
                     onQrCodeScanned = { deeplink ->
-                        navController.navigate("${Screen.Main.route}?scannedDeeplink=$deeplink") {
+                        val encodedDeeplink = URLEncoder.encode(deeplink, "UTF-8")
+                        navController.navigate("${Screen.Main.route}?deeplink=$encodedDeeplink") {
                             popUpTo(Screen.Main.route) { inclusive = true }
                         }
                     },
@@ -228,13 +227,14 @@ fun AppNavigation() {
                 )
             }
             composable(
-                route = "${Screen.ParameterEditor.route}/{deeplink}",
-                arguments = listOf(navArgument("deeplink") { type = NavType.StringType })
+                route = "${Screen.ParameterEditor.route}?deeplink={deeplink}",
+                arguments = listOf(navArgument("deeplink") { type = NavType.StringType; nullable = true })
             ) { backStackEntry ->
                 ParameterEditorScreen(
                     deeplink = backStackEntry.arguments?.getString("deeplink") ?: "",
                     onApply = { editedDeeplink ->
-                        navController.navigate("${Screen.Main.route}?editedDeeplink=$editedDeeplink") {
+                        val encodedDeeplink = URLEncoder.encode(editedDeeplink, "UTF-8")
+                        navController.navigate("${Screen.Main.route}?deeplink=$encodedDeeplink") {
                             popUpTo(Screen.Main.route) { inclusive = true }
                         }
                     }
@@ -247,20 +247,21 @@ fun AppNavigation() {
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun MainScreen(
-    scannedDeeplink: String?,
-    editedDeeplink: String?,
+    initialDeeplink: String?,
     onLaunch: (Deeplink) -> Unit,
     onScanQrCode: () -> Unit,
     onEditParameters: (String) -> Unit
 ) {
-    var text by remember { mutableStateOf(scannedDeeplink ?: editedDeeplink ?: "") }
+    var text by remember(initialDeeplink) { mutableStateOf(initialDeeplink ?: "") }
     var isError by remember { mutableStateOf(false) }
     val keyboardController = LocalSoftwareKeyboardController.current
 
     fun validate(input: String) {
         isError = try {
-            URI(input)
-            false
+            if (input.isBlank()) false else {
+                URI(input)
+                false
+            }
         } catch (e: Exception) {
             true
         }
@@ -319,6 +320,6 @@ fun MainScreen(
 @Composable
 fun DefaultPreview() {
     DeepLinkTestAndroidTheme {
-        MainScreen(scannedDeeplink = null, editedDeeplink = null, onLaunch = {}, onScanQrCode = {}, onEditParameters = {})
+        MainScreen(initialDeeplink = null, onLaunch = {}, onScanQrCode = {}, onEditParameters = {})
     }
 }
