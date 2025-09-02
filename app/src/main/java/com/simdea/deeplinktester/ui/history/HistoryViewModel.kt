@@ -16,6 +16,7 @@ class HistoryViewModel(private val deeplinkDao: DeeplinkDao) : ViewModel() {
     val showOnlyFavorites: StateFlow<Boolean> = _showOnlyFavorites.asStateFlow()
 
     val history: StateFlow<List<Deeplink>> = deeplinkDao.getAll()
+        .map { it.toList() }
         .combine(_showOnlyFavorites) { deeplinks, onlyFavorites ->
             if (onlyFavorites) {
                 deeplinks.filter { it.isFavorite }
