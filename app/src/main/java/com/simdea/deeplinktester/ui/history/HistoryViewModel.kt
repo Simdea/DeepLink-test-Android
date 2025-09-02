@@ -1,26 +1,38 @@
 package com.simdea.deeplinktester.ui.history
 
 import android.app.Application
-import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.simdea.deeplinktester.data.AppDatabase
 import com.simdea.deeplinktester.data.Deeplink
 import com.simdea.deeplinktester.data.DeeplinkDao
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class HistoryViewModel(private val deeplinkDao: DeeplinkDao) : ViewModel() {
 
+    private val _showOnlyFavorites = MutableStateFlow(false)
+    val showOnlyFavorites: StateFlow<Boolean> = _showOnlyFavorites.asStateFlow()
+
     val history: StateFlow<List<Deeplink>> = deeplinkDao.getAll()
+        .map { it.toList() }
+        .combine(_showOnlyFavorites) { deeplinks, onlyFavorites ->
+            if (onlyFavorites) {
+                deeplinks.filter { it.isFavorite }
+            } else {
+                deeplinks
+            }
+        }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
+
+    fun toggleShowOnlyFavorites() {
+        _showOnlyFavorites.value = !_showOnlyFavorites.value
+    }
 
     fun addDeeplink(deeplink: Deeplink) {
         viewModelScope.launch {

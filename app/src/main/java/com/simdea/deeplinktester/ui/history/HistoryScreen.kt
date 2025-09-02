@@ -18,12 +18,13 @@ import com.simdea.deeplinktester.data.Deeplink
 @Composable
 fun HistoryScreen(
     history: List<Deeplink>,
+    showOnlyFavorites: Boolean,
+    onToggleShowOnlyFavorites: () -> Unit,
     onRetry: (Deeplink) -> Unit,
     onRemove: (Deeplink) -> Unit,
     onToggleFavorite: (Deeplink) -> Unit
 ) {
     var showDialog by remember { mutableStateOf<Deeplink?>(null) }
-    var showOnlyFavorites by remember { mutableStateOf(false) }
 
     showDialog?.let { deeplinkToRemove ->
         AlertDialog(
@@ -60,14 +61,8 @@ fun HistoryScreen(
             Spacer(modifier = Modifier.width(8.dp))
             Switch(
                 checked = showOnlyFavorites,
-                onCheckedChange = { showOnlyFavorites = it }
+                onCheckedChange = { onToggleShowOnlyFavorites() }
             )
-        }
-
-        val filteredHistory = if (showOnlyFavorites) {
-            history.filter { it.isFavorite }
-        } else {
-            history
         }
 
         LazyColumn(
@@ -75,7 +70,7 @@ fun HistoryScreen(
             contentPadding = PaddingValues(16.dp)
         ) {
             items(
-                items = filteredHistory,
+                items = history,
                 key = { deeplink -> deeplink.id }
             ) { deeplink ->
                 HistoryItem(
