@@ -18,7 +18,6 @@ process faster and more efficient.
 -   **Syntax Validation:** Get real-time feedback on the validity of your URI syntax.
 -   **History & Favorites:** Automatically saves a history of all tested deeplinks, with the ability to mark your most-used links as favorites.
 -   **Searchable History:** Quickly filter your history list to find the exact deeplink you need.
--   **Collections:** Group your deeplinks into named collections to keep your workspace organized.
 -   **Retry & Remove:** Quickly re-test any deeplink from your history or remove it.
 -   **Export/Import:** Export your history to a JSON file to share with colleagues or back it up, and import it back into the app.
 -   **Error Handling:** The app gracefully handles cases where no application can open the deeplink, preventing crashes.
