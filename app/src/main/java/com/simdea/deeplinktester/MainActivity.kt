@@ -38,6 +38,7 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.google.android.gms.ads.MobileAds
 import com.simdea.deeplinktester.data.Deeplink
+import com.simdea.deeplinktester.data.DeeplinkWithCollections
 import com.simdea.deeplinktester.ui.ads.BannerAd
 import com.simdea.deeplinktester.ui.editor.ParameterEditorScreen
 import com.simdea.deeplinktester.ui.history.HistoryScreen
@@ -189,14 +190,19 @@ fun AppNavigation() {
             }
             composable(Screen.History.route) {
                 val history by historyViewModel.history.collectAsState()
+                val collections by historyViewModel.collections.collectAsState()
                 val showOnlyFavorites by historyViewModel.showOnlyFavorites.collectAsState()
                 val searchQuery by historyViewModel.searchQuery.collectAsState()
+                val selectedCollectionId by historyViewModel.selectedCollectionId.collectAsState()
                 HistoryScreen(
                     history = history,
+                    collections = collections,
                     showOnlyFavorites = showOnlyFavorites,
                     searchQuery = searchQuery,
+                    selectedCollectionId = selectedCollectionId,
                     onToggleShowOnlyFavorites = { historyViewModel.toggleShowOnlyFavorites() },
                     onSearchQueryChanged = { historyViewModel.onSearchQueryChanged(it) },
+                    onCollectionSelected = { historyViewModel.onCollectionSelected(it) },
                     onRetry = { deeplink ->
                         try {
                             val launchBrowser = Intent(Intent.ACTION_VIEW).apply {
@@ -214,7 +220,14 @@ fun AppNavigation() {
                         }
                     },
                     onRemove = { historyViewModel.removeDeeplink(it) },
-                    onToggleFavorite = { historyViewModel.toggleFavorite(it) }
+                    onToggleFavorite = { historyViewModel.toggleFavorite(it) },
+                    onAddCollection = { historyViewModel.addCollection(it) },
+                    onAddDeeplinkToCollection = { deeplinkId, collectionId ->
+                        historyViewModel.addDeeplinkToCollection(deeplinkId, collectionId)
+                    },
+                    onRemoveDeeplinkFromCollection = { deeplinkId, collectionId ->
+                        historyViewModel.removeDeeplinkFromCollection(deeplinkId, collectionId)
+                    }
                 )
             }
             composable(Screen.Settings.route) {
