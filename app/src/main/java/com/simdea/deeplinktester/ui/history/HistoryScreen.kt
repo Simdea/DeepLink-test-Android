@@ -77,7 +77,7 @@ fun HistoryScreen(
                     deeplink = deeplink,
                     onRetry = { onRetry(deeplink) },
                     onRemove = { showDialog = deeplink },
-                    onToggleFavorite = onToggleFavorite
+                    onToggleFavorite = { onToggleFavorite(deeplink) }
                 )
                 Spacer(modifier = Modifier.height(8.dp))
             }
@@ -90,7 +90,7 @@ fun HistoryItem(
     deeplink: Deeplink,
     onRetry: () -> Unit,
     onRemove: () -> Unit,
-    onToggleFavorite: (Deeplink) -> Unit
+    onToggleFavorite: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth()
@@ -102,10 +102,13 @@ fun HistoryItem(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            IconButton(onClick = { onToggleFavorite(deeplink) }) {
+            IconButton(onClick = onToggleFavorite) {
+                val imageVector = if (deeplink.isFavorite) Icons.Filled.Star else Icons.Outlined.Star
+                val tint = if (deeplink.isFavorite) MaterialTheme.colorScheme.primary else LocalContentColor.current
                 Icon(
-                    imageVector = if (deeplink.isFavorite) Icons.Filled.Star else Icons.Outlined.Star,
-                    contentDescription = "Favorite"
+                    imageVector = imageVector,
+                    contentDescription = "Favorite",
+                    tint = tint
                 )
             }
             Text(
