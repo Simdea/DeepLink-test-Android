@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Star
+import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -103,15 +104,10 @@ fun HistoryItem(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             IconButton(onClick = onToggleFavorite) {
-                key(deeplink.isFavorite) {
-                    val imageVector = if (deeplink.isFavorite) Icons.Filled.Star else Icons.Outlined.Star
-                    val tint = if (deeplink.isFavorite) MaterialTheme.colorScheme.primary else LocalContentColor.current
-                    Icon(
-                        imageVector = imageVector,
-                        contentDescription = "Favorite",
-                        tint = tint
-                    )
-                }
+                Icon(
+                    imageVector = if (deeplink.isFavorite) Icons.Filled.Star else Icons.Outlined.StarOutline,
+                    contentDescription = "Favorite"
+                )
             }
             Text(
                 text = deeplink.deeplink,
