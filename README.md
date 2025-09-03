@@ -22,6 +22,7 @@ process faster and more efficient.
 -   **Retry & Remove:** Quickly re-test any deeplink from your history or remove it.
 -   **Export/Import:** Export your history to a JSON file to share with colleagues or back it up, and import it back into the app.
 -   **Error Handling:** The app gracefully handles cases where no application can open the deeplink, preventing crashes.
+-   **Theme Selector:** Choose between Light, Dark, or follow the system setting.
 -   **Ad-Supported:** Includes a banner ad for monetization.
 
 ## Tech Stack

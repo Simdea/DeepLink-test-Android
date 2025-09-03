@@ -42,9 +42,13 @@ import com.simdea.deeplinktester.data.DeeplinkWithCollections
 import com.simdea.deeplinktester.ui.ads.BannerAd
 import com.simdea.deeplinktester.ui.editor.ParameterEditorScreen
 import com.simdea.deeplinktester.ui.history.HistoryScreen
+import com.simdea.deeplinktester.data.preferences.ThemeOption
 import com.simdea.deeplinktester.ui.history.HistoryViewModel
 import com.simdea.deeplinktester.ui.scanner.QrCodeScannerScreen
+import androidx.compose.foundation.isSystemInDarkTheme
+import com.simdea.deeplinktester.ui.main.MainViewModel
 import com.simdea.deeplinktester.ui.settings.SettingsScreen
+import com.simdea.deeplinktester.ui.settings.SettingsViewModel
 import com.simdea.deeplinktester.ui.theme.DeepLinkTestAndroidTheme
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -72,9 +76,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         MobileAds.initialize(this)
         setContent {
-            DeepLinkTestAndroidTheme {
-                AppNavigation()
-            }
+            AppNavigation()
         }
     }
 }
@@ -82,14 +84,26 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppNavigation() {
-    val navController = rememberNavController()
     val context = LocalContext.current
-    val historyViewModel: HistoryViewModel = viewModel(
-        factory = HistoryViewModel.HistoryViewModelFactory(
-            context.applicationContext as Application
-        )
+    val mainViewModel: MainViewModel = viewModel(
+        factory = MainViewModel.provideFactory(context.applicationContext as Application)
     )
-    val snackbarHostState = remember { SnackbarHostState() }
+    val themeOption by mainViewModel.themeOption.collectAsState()
+
+    val useDarkTheme = when (themeOption) {
+        ThemeOption.LIGHT -> false
+        ThemeOption.DARK -> true
+        ThemeOption.SYSTEM -> isSystemInDarkTheme()
+    }
+
+    DeepLinkTestAndroidTheme(darkTheme = useDarkTheme) {
+        val navController = rememberNavController()
+        val historyViewModel: HistoryViewModel = viewModel(
+            factory = HistoryViewModel.HistoryViewModelFactory(
+                context.applicationContext as Application
+            )
+        )
+        val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val gson = Gson()
 
@@ -231,9 +245,15 @@ fun AppNavigation() {
                 )
             }
             composable(Screen.Settings.route) {
+                val settingsViewModel: SettingsViewModel = viewModel(
+                    factory = SettingsViewModel.provideFactory(context.applicationContext as Application)
+                )
+                val themeOption by settingsViewModel.themeOptionFlow.collectAsState(initial = ThemeOption.SYSTEM)
                 SettingsScreen(
                     onExport = { exportLauncher.launch("deeplink_history.json") },
-                    onImport = { importLauncher.launch(arrayOf("*/*")) }
+                    onImport = { importLauncher.launch(arrayOf("*/*")) },
+                    themeOption = themeOption,
+                    onThemeOptionSelected = { settingsViewModel.updateThemeOption(it) }
                 )
             }
             composable(Screen.QrScanner.route) {
