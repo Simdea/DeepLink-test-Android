@@ -15,20 +15,33 @@ class HistoryViewModel(private val deeplinkDao: DeeplinkDao) : ViewModel() {
     private val _showOnlyFavorites = MutableStateFlow(false)
     val showOnlyFavorites: StateFlow<Boolean> = _showOnlyFavorites.asStateFlow()
 
-    val history: StateFlow<List<Deeplink>> = deeplinkDao.getAll()
-        .map { it.toList() }
-        .combine(_showOnlyFavorites) { deeplinks, onlyFavorites ->
-            if (onlyFavorites) {
-                deeplinks.filter { it.isFavorite }
-            } else {
-                deeplinks
-            }
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
+    val history: StateFlow<List<Deeplink>> = combine(
+        deeplinkDao.getAll(),
+        _showOnlyFavorites,
+        _searchQuery
+    ) { deeplinks, onlyFavorites, query ->
+        val filteredByFavorites = if (onlyFavorites) {
+            deeplinks.filter { it.isFavorite }
+        } else {
+            deeplinks
         }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
+        if (query.isBlank()) {
+            filteredByFavorites
+        } else {
+            filteredByFavorites.filter { it.deeplink.contains(query, ignoreCase = true) }
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
+    fun onSearchQueryChanged(query: String) {
+        _searchQuery.value = query
+    }
 
     fun toggleShowOnlyFavorites() {
         _showOnlyFavorites.value = !_showOnlyFavorites.value

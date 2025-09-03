@@ -20,7 +20,9 @@ import com.simdea.deeplinktester.data.Deeplink
 fun HistoryScreen(
     history: List<Deeplink>,
     showOnlyFavorites: Boolean,
+    searchQuery: String,
     onToggleShowOnlyFavorites: () -> Unit,
+    onSearchQueryChanged: (String) -> Unit,
     onRetry: (Deeplink) -> Unit,
     onRemove: (Deeplink) -> Unit,
     onToggleFavorite: (Deeplink) -> Unit
@@ -51,6 +53,15 @@ fun HistoryScreen(
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = onSearchQueryChanged,
+            label = { Text("Search") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            singleLine = true
+        )
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -67,7 +78,7 @@ fun HistoryScreen(
         }
 
         LazyColumn(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().padding(top = 8.dp),
             contentPadding = PaddingValues(16.dp)
         ) {
             items(

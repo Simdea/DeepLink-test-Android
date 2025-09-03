@@ -190,10 +190,13 @@ fun AppNavigation() {
             composable(Screen.History.route) {
                 val history by historyViewModel.history.collectAsState()
                 val showOnlyFavorites by historyViewModel.showOnlyFavorites.collectAsState()
+                val searchQuery by historyViewModel.searchQuery.collectAsState()
                 HistoryScreen(
                     history = history,
                     showOnlyFavorites = showOnlyFavorites,
+                    searchQuery = searchQuery,
                     onToggleShowOnlyFavorites = { historyViewModel.toggleShowOnlyFavorites() },
+                    onSearchQueryChanged = { historyViewModel.onSearchQueryChanged(it) },
                     onRetry = { deeplink ->
                         try {
                             val launchBrowser = Intent(Intent.ACTION_VIEW).apply {
