@@ -103,13 +103,15 @@ fun HistoryItem(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             IconButton(onClick = onToggleFavorite) {
-                val imageVector = if (deeplink.isFavorite) Icons.Filled.Star else Icons.Outlined.Star
-                val tint = if (deeplink.isFavorite) MaterialTheme.colorScheme.primary else LocalContentColor.current
-                Icon(
-                    imageVector = imageVector,
-                    contentDescription = "Favorite",
-                    tint = tint
-                )
+                key(deeplink.isFavorite) {
+                    val imageVector = if (deeplink.isFavorite) Icons.Filled.Star else Icons.Outlined.Star
+                    val tint = if (deeplink.isFavorite) MaterialTheme.colorScheme.primary else LocalContentColor.current
+                    Icon(
+                        imageVector = imageVector,
+                        contentDescription = "Favorite",
+                        tint = tint
+                    )
+                }
             }
             Text(
                 text = deeplink.deeplink,
