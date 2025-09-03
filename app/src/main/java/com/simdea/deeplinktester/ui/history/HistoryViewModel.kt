@@ -4,10 +4,13 @@ import android.app.Application
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.simdea.deeplinktester.data.AppDatabase
-import com.simdea.deeplinktester.data.Deeplink
-import com.simdea.deeplinktester.data.DeeplinkDao
-import kotlinx.coroutines.flow.*
+import com.simdea.deeplinktester.data.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class HistoryViewModel(private val deeplinkDao: DeeplinkDao) : ViewModel() {
@@ -18,20 +21,29 @@ class HistoryViewModel(private val deeplinkDao: DeeplinkDao) : ViewModel() {
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
-    val history: StateFlow<List<Deeplink>> = combine(
+    private val _selectedCollectionId = MutableStateFlow<Int?>(null)
+    val selectedCollectionId: StateFlow<Int?> = _selectedCollectionId.asStateFlow()
+
+    val history: StateFlow<List<DeeplinkWithCollections>> = combine(
         deeplinkDao.getAll(),
         _showOnlyFavorites,
-        _searchQuery
-    ) { deeplinks, onlyFavorites, query ->
+        _searchQuery,
+        _selectedCollectionId
+    ) { deeplinks, onlyFavorites, query, collectionId ->
         val filteredByFavorites = if (onlyFavorites) {
-            deeplinks.filter { it.isFavorite }
+            deeplinks.filter { it.deeplink.isFavorite }
         } else {
             deeplinks
         }
-        if (query.isBlank()) {
+        val filteredBySearch = if (query.isBlank()) {
             filteredByFavorites
         } else {
-            filteredByFavorites.filter { it.deeplink.contains(query, ignoreCase = true) }
+            filteredByFavorites.filter { it.deeplink.deeplink.contains(query, ignoreCase = true) }
+        }
+        if (collectionId == null) {
+            filteredBySearch
+        } else {
+            filteredBySearch.filter { it.collections.any { c -> c.collectionId == collectionId } }
         }
     }.stateIn(
         scope = viewModelScope,
@@ -41,6 +53,10 @@ class HistoryViewModel(private val deeplinkDao: DeeplinkDao) : ViewModel() {
 
     fun onSearchQueryChanged(query: String) {
         _searchQuery.value = query
+    }
+
+    fun onCollectionSelected(collectionId: Int?) {
+        _selectedCollectionId.value = collectionId
     }
 
     fun toggleShowOnlyFavorites() {
@@ -62,6 +78,41 @@ class HistoryViewModel(private val deeplinkDao: DeeplinkDao) : ViewModel() {
     fun toggleFavorite(deeplink: Deeplink) {
         viewModelScope.launch {
             deeplinkDao.update(deeplink.copy(isFavorite = !deeplink.isFavorite))
+        }
+    }
+
+    val collections: StateFlow<List<Collection>> = deeplinkDao.getAllCollections()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+    fun addCollection(name: String) {
+        viewModelScope.launch {
+            deeplinkDao.insertCollection(Collection(name = name))
+        }
+    }
+
+    fun addDeeplinkToCollection(deeplinkId: Int, collectionId: Int) {
+        viewModelScope.launch {
+            deeplinkDao.insertDeeplinkCollectionCrossRef(
+                DeeplinkCollectionCrossRef(
+                    deeplinkId = deeplinkId,
+                    collectionId = collectionId
+                )
+            )
+        }
+    }
+
+    fun removeDeeplinkFromCollection(deeplinkId: Int, collectionId: Int) {
+        viewModelScope.launch {
+            deeplinkDao.deleteDeeplinkCollectionCrossRef(
+                DeeplinkCollectionCrossRef(
+                    deeplinkId = deeplinkId,
+                    collectionId = collectionId
+                )
+            )
         }
     }
 
