@@ -47,7 +47,7 @@ fun SettingsScreen(
                 expanded = isThemeDropdownExpanded,
                 onDismissRequest = { isThemeDropdownExpanded = false }
             ) {
-                ThemeOption.values().forEach { option ->
+                ThemeOption.entries.forEach { option ->
                     DropdownMenuItem(
                         text = { Text(option.name.lowercase().replaceFirstChar { it.titlecase(Locale.getDefault()) }) },
                         onClick = {

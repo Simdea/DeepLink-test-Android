@@ -57,6 +57,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.MaterialTheme
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -203,7 +204,7 @@ fun HistoryScreen(
                 HistoryItem(
                     item = item,
                     onRetry = { onRetry(item.deeplink) },
-                    onRemove = { showDialog = item.deeplink },
+                    onRemove = { onRemove(item.deeplink) },
                     onToggleFavorite = { onToggleFavorite(item.deeplink) },
                     onManageCollections = { showCollectionDialog = item },
                     onCollectionSelected = { onCollectionSelected(it) }
