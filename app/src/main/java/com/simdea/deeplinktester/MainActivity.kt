@@ -149,10 +149,11 @@ fun AppNavigation() {
                         val navBackStackEntry by navController.currentBackStackEntryAsState()
                         val currentDestination = navBackStackEntry?.destination
                         items.forEach { screen ->
+                            val isSelected = currentDestination?.hierarchy?.any { it.route == screen.route } == true
                             NavigationBarItem(
                                 icon = { screen.icon() },
                                 label = { Text(stringResource(screen.resourceId)) },
-                                selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
+                                selected = isSelected,
                                 onClick = {
                                     navController.navigate(screen.route) {
                                         popUpTo(navController.graph.findStartDestination().id) {
