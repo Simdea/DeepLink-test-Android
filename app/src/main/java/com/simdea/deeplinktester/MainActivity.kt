@@ -132,7 +132,7 @@ fun AppNavigation() {
                         val type = object : TypeToken<List<Deeplink>>() {}.type
                         val importedHistory: List<Deeplink> = gson.fromJson(json, type)
                         val currentHistory = historyViewModel.history.first()
-                        val currentDeeplinks = currentHistory.map { it.deeplink }.toSet()
+                        val currentDeeplinks = currentHistory.map { it.deeplink.deeplink }.toSet()
                         val newDeeplinks = importedHistory.filter { !currentDeeplinks.contains(it.deeplink) }
                         newDeeplinks.forEach { historyViewModel.addDeeplink(it) }
                     }

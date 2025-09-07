@@ -41,7 +41,10 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Label
+import androidx.compose.material.icons.filled.Replay
+import androidx.compose.material.icons.outlined.NewLabel
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
@@ -58,7 +61,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.graphics.Color
 
+import androidx.compose.ui.tooling.preview.Preview
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScreen(
@@ -125,20 +130,6 @@ fun HistoryScreen(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             singleLine = true
         )
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.End
-        ) {
-            Text("Show only favorites")
-            Spacer(modifier = Modifier.width(8.dp))
-            Switch(
-                checked = showOnlyFavorites,
-                onCheckedChange = { onToggleShowOnlyFavorites() }
-            )
-        }
 
         ExposedDropdownMenuBox(
             expanded = isCollectionDropdownExpanded,
@@ -215,6 +206,79 @@ fun HistoryScreen(
     }
 }
 
+@Preview
+@Composable
+fun HistoryScreenPreview() {
+    val history = listOf(
+        DeeplinkWithCollections(
+            deeplink = Deeplink(id = 0, deeplink = "app://example.com/home", timestamp = System.currentTimeMillis(), isFavorite = false),
+            collections = listOf(Collection(collectionId = 0, name = "Social Media"))
+        ),
+        DeeplinkWithCollections(
+            deeplink = Deeplink(id = 1, deeplink = "app://example.com/profile", timestamp = System.currentTimeMillis(), isFavorite = true),
+            collections = listOf(Collection(collectionId = 1, name = "Shopping"))
+        )
+    )
+    val collections = listOf(
+        Collection(collectionId = 0, name = "Social Media"),
+        Collection(collectionId = 1, name = "Shopping")
+    )
+    HistoryScreen(
+        history = history,
+        collections = collections,
+        showOnlyFavorites = false,
+        searchQuery = "",
+        selectedCollectionId = null,
+        onToggleShowOnlyFavorites = {},
+        onSearchQueryChanged = {},
+        onCollectionSelected = {},
+        onRetry = {},
+        onRemove = {},
+        onToggleFavorite = {},
+        onAddCollection = {},
+        onAddDeeplinkToCollection = { _, _ -> },
+        onRemoveDeeplinkFromCollection = { _, _ -> }
+    )
+}
+
+@Preview
+@Composable
+fun HistoryItemPreview() {
+    val item = DeeplinkWithCollections(
+        deeplink = Deeplink(id = 0, deeplink = "app://example.com/home", timestamp = System.currentTimeMillis(), isFavorite = false),
+        collections = listOf(Collection(collectionId = 0, name = "Social Media"))
+    )
+    HistoryItem(
+        item = item,
+        onRetry = {},
+        onRemove = {},
+        onToggleFavorite = {},
+        onManageCollections = {},
+        onCollectionSelected = {}
+    )
+}
+
+@Preview
+@Composable
+fun CollectionManagementDialogPreview() {
+    val item = DeeplinkWithCollections(
+        deeplink = Deeplink(id = 0, deeplink = "app://example.com/home", timestamp = System.currentTimeMillis(), isFavorite = false),
+        collections = listOf(Collection(collectionId = 0, name = "Social Media"))
+    )
+    val allCollections = listOf(
+        Collection(collectionId = 0, name = "Social Media"),
+        Collection(collectionId = 1, name = "Shopping")
+    )
+    CollectionManagementDialog(
+        item = item,
+        allCollections = allCollections,
+        onDismiss = {},
+        onAddCollection = {},
+        onAddDeeplinkToCollection = { _, _ -> },
+        onRemoveDeeplinkFromCollection = { _, _ -> }
+    )
+}
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun HistoryItem(
@@ -246,14 +310,13 @@ fun HistoryItem(
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = onManageCollections) {
-                        Icon(Icons.Default.Label, contentDescription = "Manage Collections")
+                        Icon(Icons.Outlined.NewLabel, contentDescription = "Manage Collections")
                     }
-                    Button(onClick = onRetry) {
-                        Text(stringResource(R.string.retry_button))
+                    IconButton(onClick = onRetry) {
+                        Icon(Icons.Default.Replay, contentDescription = stringResource(R.string.retry_button))
                     }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Button(onClick = onRemove) {
-                        Text(stringResource(R.string.remove_button))
+                    IconButton(onClick = onRemove) {
+                        Icon(Icons.Default.Delete, tint = Color.Red, contentDescription = stringResource(R.string.remove_button))
                     }
                 }
             }
