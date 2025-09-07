@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.simdea.deeplinktester.data.preferences.ThemeOption
 import com.simdea.deeplinktester.data.preferences.UserPreferencesRepository
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
 class MainViewModel(
@@ -18,6 +19,14 @@ class MainViewModel(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = ThemeOption.SYSTEM
+        )
+
+    val onboardingCompleted = userPreferencesRepository.onboardingCompletedFlow
+        .map { it }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = null
         )
 
     companion object {
