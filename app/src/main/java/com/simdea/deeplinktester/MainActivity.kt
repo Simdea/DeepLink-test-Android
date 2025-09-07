@@ -154,7 +154,7 @@ fun AppNavigation() {
 
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentDestination = navBackStackEntry?.destination
-            val showBottomBar = items.any { it.route == currentDestination?.route }
+            val showBottomBar = currentDestination?.hierarchy?.any { dest -> items.any { it.route == dest.route } } == true
 
             Scaffold(
                 snackbarHost = { SnackbarHost(snackbarHostState) },
