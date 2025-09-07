@@ -23,6 +23,7 @@ process faster and more efficient.
 -   **Export/Import:** Export your history to a JSON file to share with colleagues or back it up, and import it back into the app.
 -   **Error Handling:** The app gracefully handles cases where no application can open the deeplink, preventing crashes.
 -   **Theme Selector:** Choose between Light, Dark, or follow the system setting.
+-   **Onboarding Screen:** A welcoming onboarding screen that explains the app's features to new users.
 -   **Ad-Supported:** Includes a banner ad for monetization.
 
 ## Tech Stack
