@@ -152,30 +152,34 @@ fun AppNavigation() {
                 }
             }
 
+            val navBackStackEntry by navController.currentBackStackEntryAsState()
+            val currentDestination = navBackStackEntry?.destination
+            val showBottomBar = items.any { it.route == currentDestination?.route }
+
             Scaffold(
                 snackbarHost = { SnackbarHost(snackbarHostState) },
                 bottomBar = {
-                    Column {
-                        BannerAd()
-                        NavigationBar {
-                            val navBackStackEntry by navController.currentBackStackEntryAsState()
-                            val currentDestination = navBackStackEntry?.destination
-                            items.forEach { screen ->
-                                val isSelected = currentDestination?.hierarchy?.any { it.route == screen.route } == true
-                                NavigationBarItem(
-                                    icon = { screen.icon() },
-                                    label = { Text(stringResource(screen.resourceId)) },
-                                    selected = isSelected,
-                                    onClick = {
-                                        navController.navigate(screen.route) {
-                                            popUpTo(navController.graph.findStartDestination().id) {
-                                                saveState = true
+                    if (showBottomBar) {
+                        Column {
+                            BannerAd()
+                            NavigationBar {
+                                items.forEach { screen ->
+                                    val isSelected = currentDestination?.hierarchy?.any { it.route == screen.route } == true
+                                    NavigationBarItem(
+                                        icon = { screen.icon() },
+                                        label = { Text(stringResource(screen.resourceId)) },
+                                        selected = isSelected,
+                                        onClick = {
+                                            navController.navigate(screen.route) {
+                                                popUpTo(navController.graph.findStartDestination().id) {
+                                                    saveState = true
+                                                }
+                                                launchSingleTop = true
+                                                restoreState = true
                                             }
-                                            launchSingleTop = true
-                                            restoreState = true
                                         }
-                                    }
-                                )
+                                    )
+                                }
                             }
                         }
                     }
