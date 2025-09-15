@@ -63,10 +63,10 @@ import java.net.URLEncoder
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.CollectionsBookmark
-import androidx.compose.material.icons.outlined.Flask
+import androidx.compose.material.icons.outlined.Science
 
 sealed class Screen(val route: String, val resourceId: Int, val icon: @Composable () -> Unit) {
-    object Main : Screen("main", R.string.main_screen_title, { Icon(Icons.Outlined.Flask, contentDescription = null) })
+    object Main : Screen("main", R.string.main_screen_title, { Icon(Icons.Outlined.Science, contentDescription = null) })
     object History : Screen("history", R.string.history_screen_title, { Icon(Icons.Outlined.History, contentDescription = null) })
     object Collections : Screen("collections", R.string.collections_screen_title, { Icon(Icons.Outlined.CollectionsBookmark, contentDescription = null) })
     object Settings : Screen("settings", R.string.settings_screen_title, { Icon(Icons.Outlined.Settings, contentDescription = null) })
