@@ -66,6 +66,7 @@ import androidx.compose.material.icons.outlined.CollectionsBookmark
 import androidx.compose.material.icons.outlined.Science
 
 sealed class Screen(val route: String, val resourceId: Int, val icon: @Composable () -> Unit) {
+    object Splash : Screen("splash", 0, { /* No icon */ })
     object Main : Screen("main", R.string.main_screen_title, { Icon(Icons.Outlined.Science, contentDescription = null) })
     object History : Screen("history", R.string.history_screen_title, { Icon(Icons.Outlined.History, contentDescription = null) })
     object Collections : Screen("collections", R.string.collections_screen_title, { Icon(Icons.Outlined.CollectionsBookmark, contentDescription = null) })
@@ -195,12 +196,25 @@ fun AppNavigation() {
                     }
                 }
             ) { innerPadding ->
-                val startDestination = if (onboardingCompleted == true) Screen.Main.route else Screen.Onboarding.route
                 NavHost(
-                    navController,
-                    startDestination = startDestination,
-                    Modifier.padding(innerPadding)
+                    navController = navController,
+                    startDestination = Screen.Splash.route,
+                    modifier = Modifier.padding(innerPadding)
                 ) {
+                    composable(Screen.Splash.route) {
+                        if (onboardingCompleted != null) {
+                            LaunchedEffect(onboardingCompleted) {
+                                val route = if (onboardingCompleted == true) Screen.Main.route else Screen.Onboarding.route
+                                navController.navigate(route) {
+                                    popUpTo(Screen.Splash.route) { inclusive = true }
+                                }
+                            }
+                        } else {
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                CircularProgressIndicator()
+                            }
+                        }
+                    }
                     composable(
                         route = "${Screen.Main.route}?deeplink={deeplink}",
                         arguments = listOf(navArgument("deeplink") {
