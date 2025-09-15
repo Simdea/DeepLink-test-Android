@@ -111,8 +111,8 @@ fun CollectionsScreen(
                     CollectionItem(
                         collection = collection,
                         onClick = { onCollectionClick(collection.collection.collectionId) },
-                        onEditClick = { collectionToEdit = it.collection },
-                        onDeleteClick = { collectionToDelete = it.collection }
+                        onEditClick = { collectionToEdit = collection.collection },
+                        onDeleteClick = { collectionToDelete = collection.collection }
                     )
                 }
             }
