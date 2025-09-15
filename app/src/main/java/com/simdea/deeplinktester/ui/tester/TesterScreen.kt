@@ -130,7 +130,7 @@ fun TesterScreen(
                     Row {
                         IconButton(
                             onClick = { parametersVisible = !parametersVisible },
-                            enabled = !isError && text.isNotBlank()
+                            enabled = !isError && baseUri.isNotBlank()
                         ) {
                             Icon(Icons.Default.Edit, contentDescription = "Edit Parameters")
                         }
@@ -142,7 +142,7 @@ fun TesterScreen(
                 isError = isError,
                 singleLine = true
             )
-            if (!isError && text.isNotBlank()) {
+            if (!isError && baseUri.isNotBlank()) {
                 Text(
                     text = "Valid syntax",
                     color = MaterialTheme.colorScheme.tertiary,
