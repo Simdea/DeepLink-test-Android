@@ -28,7 +28,7 @@ import com.simdea.deeplinktester.R
 import com.simdea.deeplinktester.data.Collection
 import com.simdea.deeplinktester.data.Deeplink
 import com.simdea.deeplinktester.data.DeeplinkWithCollections
-import com.simdea.deeplinktester.ui.composables.NewCollectionDialog
+import com.simdea.deeplinktester.ui.composables.AddToCollectionDialog
 import com.simdea.deeplinktester.ui.composables.PrimaryButton
 import com.simdea.deeplinktester.ui.tester.Parameter
 
@@ -49,14 +49,30 @@ fun DetailsScreen(
     var text by remember { mutableStateOf(deeplink.deeplink) }
     var isError by remember { mutableStateOf(false) }
     val parameters = remember { mutableStateListOf<Parameter>() }
-    var showNewCollectionDialog by remember { mutableStateOf(false) }
+    var showAddToCollectionDialog by remember { mutableStateOf(false) }
 
-    if (showNewCollectionDialog) {
-        NewCollectionDialog(
-            onDismiss = { showNewCollectionDialog = false },
-            onConfirm = {
-                onAddCollection(it)
-                showNewCollectionDialog = false
+    if (showAddToCollectionDialog) {
+        val deeplinkCollectionIds = remember(deeplinkWithCollections) {
+            deeplinkWithCollections.collections.map { it.collectionId }.toSet()
+        }
+        AddToCollectionDialog(
+            allCollections = allCollections,
+            deeplinkCollectionIds = deeplinkCollectionIds,
+            onDismiss = { showAddToCollectionDialog = false },
+            onConfirm = { newSelectedIds, newCollectionName ->
+                // Handle creating a new collection first
+                if (newCollectionName != null) {
+                    onAddCollection(newCollectionName)
+                }
+
+                // Handle changes in selections
+                val addedIds = newSelectedIds - deeplinkCollectionIds
+                val removedIds = deeplinkCollectionIds - newSelectedIds
+
+                addedIds.forEach { onAddDeeplinkToCollection(deeplink.id, it) }
+                removedIds.forEach { onRemoveDeeplinkFromCollection(deeplink.id, it) }
+
+                showAddToCollectionDialog = false
             }
         )
     }
@@ -189,8 +205,8 @@ fun DetailsScreen(
                     text = "Collections",
                     style = MaterialTheme.typography.titleLarge
                 )
-                TextButton(onClick = { showNewCollectionDialog = true }) {
-                    Text("+ New")
+                TextButton(onClick = { showAddToCollectionDialog = true }) {
+                    Text("+ Add to Collection")
                 }
             }
 
@@ -200,19 +216,9 @@ fun DetailsScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                val deeplinkCollectionIds = remember(deeplinkWithCollections) {
-                    deeplinkWithCollections.collections.map { it.collectionId }.toSet()
-                }
-                allCollections.forEach { collection ->
-                    FilterChip(
-                        selected = deeplinkCollectionIds.contains(collection.collectionId),
-                        onClick = {
-                            if (deeplinkCollectionIds.contains(collection.collectionId)) {
-                                onRemoveDeeplinkFromCollection(deeplink.id, collection.collectionId)
-                            } else {
-                                onAddDeeplinkToCollection(deeplink.id, collection.collectionId)
-                            }
-                        },
+                deeplinkWithCollections.collections.forEach { collection ->
+                    AssistChip(
+                        onClick = { /* Non-interactive, for display only */ },
                         label = { Text(collection.name) }
                     )
                 }

@@ -13,7 +13,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.simdea.deeplinktester.data.Collection
 import com.simdea.deeplinktester.data.CollectionWithDeeplinkCount
+import com.simdea.deeplinktester.ui.composables.DeleteCollectionDialog
+import com.simdea.deeplinktester.ui.composables.EditCollectionDialog
 import com.simdea.deeplinktester.ui.composables.NewCollectionDialog
 import com.simdea.deeplinktester.ui.composables.PrimaryButton
 
@@ -23,16 +26,43 @@ fun CollectionsScreen(
     collections: List<CollectionWithDeeplinkCount>,
     searchQuery: String,
     onSearchQueryChanged: (String) -> Unit,
-    onAddCollection: (String) -> Unit
+    onAddCollection: (String) -> Unit,
+    onCollectionClick: (Int) -> Unit,
+    onUpdateCollection: (Collection) -> Unit,
+    onDeleteCollection: (Collection) -> Unit
 ) {
-    var showDialog by remember { mutableStateOf(false) }
+    var showNewCollectionDialog by remember { mutableStateOf(false) }
+    var collectionToEdit by remember { mutableStateOf<Collection?>(null) }
+    var collectionToDelete by remember { mutableStateOf<Collection?>(null) }
 
-    if (showDialog) {
+    if (showNewCollectionDialog) {
         NewCollectionDialog(
-            onDismiss = { showDialog = false },
+            onDismiss = { showNewCollectionDialog = false },
             onConfirm = {
                 onAddCollection(it)
-                showDialog = false
+                showNewCollectionDialog = false
+            }
+        )
+    }
+
+    collectionToEdit?.let { collection ->
+        EditCollectionDialog(
+            collection = collection,
+            onDismiss = { collectionToEdit = null },
+            onConfirm = { newName ->
+                onUpdateCollection(collection.copy(name = newName))
+                collectionToEdit = null
+            }
+        )
+    }
+
+    collectionToDelete?.let { collection ->
+        DeleteCollectionDialog(
+            collection = collection,
+            onDismiss = { collectionToDelete = null },
+            onConfirm = {
+                onDeleteCollection(collection)
+                collectionToDelete = null
             }
         )
     }
@@ -46,7 +76,7 @@ fun CollectionsScreen(
         floatingActionButton = {
             PrimaryButton(
                 text = "+ New Collection",
-                onClick = { showDialog = true }
+                onClick = { showNewCollectionDialog = true }
             )
         },
         floatingActionButtonPosition = FabPosition.Center
@@ -78,7 +108,12 @@ fun CollectionsScreen(
                     items = collections,
                     key = { it.collection.collectionId }
                 ) { collection ->
-                    CollectionItem(collection = collection)
+                    CollectionItem(
+                        collection = collection,
+                        onClick = { onCollectionClick(collection.collection.collectionId) },
+                        onEditClick = { collectionToEdit = it.collection },
+                        onDeleteClick = { collectionToDelete = it.collection }
+                    )
                 }
             }
         }
@@ -86,9 +121,17 @@ fun CollectionsScreen(
 }
 
 @Composable
-fun CollectionItem(collection: CollectionWithDeeplinkCount) {
+fun CollectionItem(
+    collection: CollectionWithDeeplinkCount,
+    onClick: () -> Unit,
+    onEditClick: () -> Unit,
+    onDeleteClick: () -> Unit
+) {
+    var showMenu by remember { mutableStateOf(false) }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
+        onClick = onClick,
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
@@ -115,8 +158,29 @@ fun CollectionItem(collection: CollectionWithDeeplinkCount) {
                     color = MaterialTheme.colorScheme.secondary
                 )
             }
-            IconButton(onClick = { /* TODO: Implement more options */ }) {
-                Icon(Icons.Default.MoreVert, contentDescription = "More options")
+            Box {
+                IconButton(onClick = { showMenu = true }) {
+                    Icon(Icons.Default.MoreVert, contentDescription = "More options")
+                }
+                DropdownMenu(
+                    expanded = showMenu,
+                    onDismissRequest = { showMenu = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Edit") },
+                        onClick = {
+                            onEditClick()
+                            showMenu = false
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Delete") },
+                        onClick = {
+                            onDeleteClick()
+                            showMenu = false
+                        }
+                    )
+                }
             }
         }
     }

@@ -52,6 +52,7 @@ import com.simdea.deeplinktester.ui.onboarding.OnboardingScreen
 import com.simdea.deeplinktester.ui.onboarding.OnboardingViewModel
 import com.simdea.deeplinktester.ui.settings.SettingsScreen
 import com.simdea.deeplinktester.ui.details.DetailsScreen
+import com.simdea.deeplinktester.ui.collectiondetails.CollectionDetailsScreen
 import com.simdea.deeplinktester.ui.settings.SettingsViewModel
 import com.simdea.deeplinktester.ui.theme.DeepLinkTestAndroidTheme
 import kotlinx.coroutines.flow.first
@@ -75,6 +76,9 @@ sealed class Screen(val route: String, val resourceId: Int, val icon: @Composabl
     object Onboarding : Screen("onboarding", R.string.onboarding_screen_title, { Icon(Icons.Filled.Info, contentDescription = null) })
     object Details : Screen("details/{deeplinkId}", R.string.details_screen_title, { Icon(Icons.Filled.Info, contentDescription = null) }) {
         fun createRoute(deeplinkId: Int) = "details/$deeplinkId"
+    }
+    object CollectionDetails : Screen("collections/{collectionId}", R.string.collection_details_screen_title, { Icon(Icons.Filled.Info, contentDescription = null) }) {
+        fun createRoute(collectionId: Int) = "collections/$collectionId"
     }
 }
 
@@ -308,8 +312,51 @@ fun AppNavigation() {
                             collections = collections,
                             searchQuery = searchQuery,
                             onSearchQueryChanged = { historyViewModel.onCollectionSearchQueryChanged(it) },
-                            onAddCollection = { historyViewModel.addCollection(it) }
+                            onAddCollection = { historyViewModel.addCollection(it) },
+                            onCollectionClick = { collectionId ->
+                                historyViewModel.onCollectionSelected(collectionId)
+                                navController.navigate(Screen.CollectionDetails.createRoute(collectionId))
+                            },
+                            onUpdateCollection = { historyViewModel.updateCollection(it) },
+                            onDeleteCollection = { historyViewModel.deleteCollection(it) }
                         )
+                    }
+                    composable(
+                        route = Screen.CollectionDetails.route,
+                        arguments = listOf(navArgument("collectionId") { type = NavType.IntType })
+                    ) {
+                        val collectionId by historyViewModel.selectedCollectionId.collectAsState()
+                        val collection = historyViewModel.collections.collectAsState().value.find { it.collectionId == collectionId }
+                        val deeplinks by historyViewModel.deeplinksInSelectedCollection.collectAsState()
+
+                        if (collection != null) {
+                            CollectionDetailsScreen(
+                                collectionName = collection.name,
+                                deeplinks = deeplinks,
+                                onNavigateUp = { navController.navigateUp() },
+                                onItemClick = { deeplinkId ->
+                                    navController.navigate(Screen.Details.createRoute(deeplinkId))
+                                },
+                                onRetry = { deeplink ->
+                                    try {
+                                        val launchBrowser = Intent(Intent.ACTION_VIEW).apply {
+                                            data = Uri.parse(deeplink.deeplink)
+                                            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                                        }
+                                        context.startActivity(launchBrowser)
+                                    } catch (e: ActivityNotFoundException) {
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar(
+                                                message = context.getString(R.string.activity_not_found_error),
+                                                duration = SnackbarDuration.Short
+                                            )
+                                        }
+                                    }
+                                },
+                                onRemove = { historyViewModel.removeDeeplink(it) },
+                                onToggleFavorite = { historyViewModel.toggleFavorite(it) }
+                            )
+                        }
                     }
                     composable(Screen.Settings.route) {
                         val settingsViewModel: SettingsViewModel = viewModel(

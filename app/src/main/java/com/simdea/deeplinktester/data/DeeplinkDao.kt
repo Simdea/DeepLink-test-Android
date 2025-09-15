@@ -45,4 +45,10 @@ interface DeeplinkDao {
 
     @Delete
     suspend fun delete(deeplink: Deeplink)
+
+    @Update
+    suspend fun updateCollection(collection: Collection)
+
+    @Delete
+    suspend fun deleteCollection(collection: Collection)
 }
