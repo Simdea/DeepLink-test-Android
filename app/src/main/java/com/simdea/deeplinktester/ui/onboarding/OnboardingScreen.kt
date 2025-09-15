@@ -1,147 +1,112 @@
 package com.simdea.deeplinktester.ui.onboarding
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Button
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Folder
+import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.QrCodeScanner
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.simdea.deeplinktester.R
-import kotlinx.coroutines.launch
-
-data class OnboardingPage(
-    val title: String,
-    val description: String,
-    val imageRes: Int
-)
+import com.simdea.deeplinktester.ui.composables.PrimaryButton
 
 @Composable
 fun OnboardingScreen(onOnboardingCompleted: () -> Unit) {
-    val pages = listOf(
-        OnboardingPage(
-            title = "Test Any Deeplink",
-            description = "Enter any URI and launch it directly from the app.",
-            imageRes = R.drawable.ic_launcher_foreground // Placeholder
-        ),
-        OnboardingPage(
-            title = "QR Code Scanner",
-            description = "Scan QR codes to instantly populate the deeplink input field.",
-            imageRes = R.drawable.ic_launcher_foreground // Placeholder
-        ),
-        OnboardingPage(
-            title = "History & Favorites",
-            description = "Automatically saves a history of all tested deeplinks, with the ability to mark your most-used links as favorites.",
-            imageRes = R.drawable.ic_launcher_foreground // Placeholder
-        ),
-        OnboardingPage(
-            title = "Collections",
-            description = "Group your deeplinks into named collections to keep your workspace organized.",
-            imageRes = R.drawable.ic_launcher_foreground // Placeholder
-        ),
-        OnboardingPage(
-            title = "Export/Import",
-            description = "Export your history to a JSON file to share with colleagues or back it up, and import it back into the app.",
-            imageRes = R.drawable.ic_launcher_foreground // Placeholder
-        )
-    )
-
-    val pagerState = rememberPagerState(pageCount = { pages.size })
-    val scope = rememberCoroutineScope()
-
-    Column(modifier = Modifier.fillMaxSize()) {
-        HorizontalPager(
-            state = pagerState,
-            modifier = Modifier.weight(1f)
-        ) { page ->
-            OnboardingPageContent(page = pages[page])
-        }
-
-        Row(
+    Surface(modifier = Modifier.fillMaxSize()) {
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+                .fillMaxSize()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            if (pagerState.currentPage != pages.size - 1) {
-                TextButton(onClick = onOnboardingCompleted) {
-                    Text("Skip")
-                }
-            } else {
-                Spacer(Modifier.width(64.dp)) // To balance the row
-            }
+            Spacer(modifier = Modifier.height(64.dp))
 
-            Row(
-                horizontalArrangement = Arrangement.Center,
-            ) {
-                repeat(pages.size) { iteration ->
-                    val color = if (pagerState.currentPage == iteration) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
-                    Box(
-                        modifier = Modifier
-                            .padding(4.dp)
-                            .clip(CircleShape)
-                            .background(color)
-                            .size(12.dp)
-                    )
-                }
-            }
+            Icon(
+                imageVector = Icons.Outlined.QrCodeScanner, // Placeholder, will find a better one
+                contentDescription = null,
+                modifier = Modifier.size(48.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "Deeplink Tester",
+                style = MaterialTheme.typography.displayLarge,
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Welcome! This app helps you test and manage your deeplinks with ease.",
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
 
-            if (pagerState.currentPage != pages.size - 1) {
-                TextButton(
-                    onClick = {
-                        scope.launch {
-                            pagerState.animateScrollToPage(pagerState.currentPage + 1)
-                        }
-                    }
-                ) {
-                    Text("Next")
-                }
-            } else {
-                Button(onClick = onOnboardingCompleted) {
-                    Text("Get Started")
-                }
-            }
+            Spacer(modifier = Modifier.weight(1f))
+
+            FeatureItem(
+                icon = Icons.Outlined.QrCodeScanner,
+                title = "Scan & Test",
+                description = "Test any URI or scan QR codes instantly."
+            )
+            FeatureItem(
+                icon = Icons.Outlined.Edit,
+                title = "Edit & Validate",
+                description = "Easily edit URI parameters and validate syntax."
+            )
+            FeatureItem(
+                icon = Icons.Outlined.History,
+                title = "History & Favorites",
+                description = "Keep track of your tests with searchable history and favorites."
+            )
+            FeatureItem(
+                icon = Icons.Outlined.Folder,
+                title = "Organize & Share",
+                description = "Create collections, and export/import your data."
+            )
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            PrimaryButton(
+                text = "Get Started",
+                onClick = onOnboardingCompleted
+            )
         }
     }
 }
 
 @Composable
-fun OnboardingPageContent(page: OnboardingPage) {
-    Column(
+private fun FeatureItem(icon: ImageVector, title: String, description: String) {
+    Row(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+            .fillMaxWidth()
+            .padding(vertical = 16.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Image(
-            painter = painterResource(id = page.imageRes),
+        Icon(
+            imageVector = icon,
             contentDescription = null,
-            modifier = Modifier.size(200.dp)
+            modifier = Modifier.size(40.dp),
+            tint = MaterialTheme.colorScheme.onBackground
         )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = page.title,
-            style = MaterialTheme.typography.headlineMedium,
-            textAlign = TextAlign.Center
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = page.description,
-            style = MaterialTheme.typography.bodyLarge,
-            textAlign = TextAlign.Center
-        )
+        Spacer(modifier = Modifier.width(16.dp))
+        Column {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleLarge
+            )
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.secondary
+            )
+        }
     }
 }

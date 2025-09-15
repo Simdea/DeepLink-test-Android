@@ -13,6 +13,7 @@ import com.simdea.deeplinktester.data.DeeplinkWithCollections
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import com.simdea.deeplinktester.data.CollectionWithDeeplinkCount
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
@@ -25,6 +26,9 @@ class HistoryViewModel(private val deeplinkDao: DeeplinkDao) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
+    private val _collectionSearchQuery = MutableStateFlow("")
+    val collectionSearchQuery: StateFlow<String> = _collectionSearchQuery.asStateFlow()
 
     private val _selectedCollectionId = MutableStateFlow<Int?>(null)
     val selectedCollectionId: StateFlow<Int?> = _selectedCollectionId.asStateFlow()
@@ -60,6 +64,10 @@ class HistoryViewModel(private val deeplinkDao: DeeplinkDao) : ViewModel() {
         _searchQuery.value = query
     }
 
+    fun onCollectionSearchQueryChanged(query: String) {
+        _collectionSearchQuery.value = query
+    }
+
     fun onCollectionSelected(collectionId: Int?) {
         _selectedCollectionId.value = collectionId
     }
@@ -86,8 +94,34 @@ class HistoryViewModel(private val deeplinkDao: DeeplinkDao) : ViewModel() {
         }
     }
 
+    fun getDeeplinkById(id: Int?): Deeplink? {
+        return history.value.find { it.deeplink.id == id }?.deeplink
+    }
+
+    fun updateDeeplink(deeplink: Deeplink) {
+        viewModelScope.launch {
+            deeplinkDao.update(deeplink)
+        }
+    }
+
     val collections: StateFlow<List<Collection>> = deeplinkDao.getAllCollections()
         .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+    val collectionsWithDeeplinkCount: StateFlow<List<CollectionWithDeeplinkCount>> =
+        combine(
+            deeplinkDao.getCollectionsWithDeeplinkCount(),
+            _collectionSearchQuery
+        ) { collections, query ->
+            if (query.isBlank()) {
+                collections
+            } else {
+                collections.filter { it.collection.name.contains(query, ignoreCase = true) }
+            }
+        }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()

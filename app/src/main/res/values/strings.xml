@@ -1,7 +1,9 @@
 <resources>
     <string name="app_name">DeepLinkTester</string>
-    <string name="main_screen_title">Main</string>
+    <string name="main_screen_title">Tester</string>
     <string name="history_screen_title">History</string>
+    <string name="collections_screen_title">Collections</string>
+    <string name="details_screen_title">Deeplink Details</string>
     <string name="deeplink_label">DeepLink</string>
     <string name="open_deeplink_button">Open DeepLink</string>
     <string name="remove_deeplink_dialog_title">Remove Deeplink</string>

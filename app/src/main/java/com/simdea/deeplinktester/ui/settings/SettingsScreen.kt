@@ -1,13 +1,17 @@
 package com.simdea.deeplinktester.ui.settings
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.simdea.deeplinktester.data.preferences.ThemeOption
-import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -17,56 +21,104 @@ fun SettingsScreen(
     themeOption: ThemeOption,
     onThemeOptionSelected: (ThemeOption) -> Unit
 ) {
-    var isThemeDropdownExpanded by remember { mutableStateOf(false) }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = "Theme",
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-        ExposedDropdownMenuBox(
-            expanded = isThemeDropdownExpanded,
-            onExpandedChange = { isThemeDropdownExpanded = !isThemeDropdownExpanded },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            OutlinedTextField(
-                value = themeOption.name.lowercase().replaceFirstChar { it.titlecase(Locale.getDefault()) },
-                onValueChange = {},
-                readOnly = true,
-                label = { Text("Theme") },
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isThemeDropdownExpanded) },
-                modifier = Modifier.menuAnchor().fillMaxWidth()
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Settings") }
             )
-            ExposedDropdownMenu(
-                expanded = isThemeDropdownExpanded,
-                onDismissRequest = { isThemeDropdownExpanded = false }
-            ) {
-                ThemeOption.entries.forEach { option ->
-                    DropdownMenuItem(
-                        text = { Text(option.name.lowercase().replaceFirstChar { it.titlecase(Locale.getDefault()) }) },
-                        onClick = {
-                            onThemeOptionSelected(option)
-                            isThemeDropdownExpanded = false
-                        }
+        }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(16.dp)
+        ) {
+            Text(
+                text = "APPEARANCE",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            Card {
+                Column {
+                    ThemeOption.entries.forEach { option ->
+                        ThemeSettingItem(
+                            text = option.name.replaceFirstChar { it.uppercase() },
+                            selected = themeOption == option,
+                            onClick = { onThemeOptionSelected(option) }
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Text(
+                text = "DATA",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            Card {
+                Column {
+                    DataSettingItem(
+                        text = "Export History",
+                        icon = Icons.Default.ArrowUpward,
+                        onClick = onExport
+                    )
+                    Divider()
+                    DataSettingItem(
+                        text = "Import History",
+                        icon = Icons.Default.ArrowDownward,
+                        onClick = onImport
                     )
                 }
             }
         }
-        Spacer(modifier = Modifier.height(32.dp))
-        Divider()
-        Spacer(modifier = Modifier.height(32.dp))
-        Button(onClick = onExport) {
-            Text("Export History")
-        }
-        Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = onImport) {
-            Text("Import History")
-        }
+    }
+}
+
+@Composable
+private fun ThemeSettingItem(
+    text: String,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(text, style = MaterialTheme.typography.bodyLarge)
+        RadioButton(
+            selected = selected,
+            onClick = onClick
+        )
+    }
+}
+
+@Composable
+private fun DataSettingItem(
+    text: String,
+    icon: ImageVector,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(text, style = MaterialTheme.typography.bodyLarge)
+        Icon(
+            imageVector = icon,
+            contentDescription = null
+        )
     }
 }
