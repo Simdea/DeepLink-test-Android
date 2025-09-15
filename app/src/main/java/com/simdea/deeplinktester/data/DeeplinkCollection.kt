@@ -22,6 +22,7 @@ data class DeeplinkWithCollections(
 )
 
 @Entity(
+    tableName = "deeplink_collection_cross_ref",
     primaryKeys = ["deeplinkId", "collectionId"],
     foreignKeys = [
         ForeignKey(
