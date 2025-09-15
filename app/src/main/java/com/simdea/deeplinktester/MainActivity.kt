@@ -165,11 +165,11 @@ fun AppNavigation() {
             snackbarHost = { SnackbarHost(snackbarHostState) },
             bottomBar = {
                 if (showBottomBar) {
-                    Column {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         BannerAd()
                         NavigationBar {
                             items.forEach { screen ->
-                                val isSelected = currentDestination?.hierarchy?.any { it.route == screen.route } == true
+                                val isSelected = currentDestination?.hierarchy?.any { dest -> dest.route?.startsWith(screen.route) == true } == true
                                 NavigationBarItem(
                                     icon = { screen.icon() },
                                     label = { Text(stringResource(screen.resourceId)) },
@@ -373,5 +373,3 @@ fun AppNavigation() {
             }
         }
     }
-}
-
