@@ -111,112 +111,109 @@ fun AppNavigation() {
         ThemeOption.SYSTEM -> isSystemInDarkTheme()
     }
 
+    val navController = rememberNavController()
+    val historyViewModel: HistoryViewModel = viewModel(
+        factory = HistoryViewModel.HistoryViewModelFactory(
+            context.applicationContext as Application
+        )
+    )
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val gson = Gson()
+
+    val exportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        uri?.let {
+            scope.launch {
+                val history = historyViewModel.history.first()
+                val json = gson.toJson(history)
+                context.contentResolver.openOutputStream(it)?.use { outputStream ->
+                    outputStream.write(json.toByteArray())
+                }
+            }
+        }
+    }
+
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        uri?.let {
+            scope.launch {
+                context.contentResolver.openInputStream(it)?.use { inputStream ->
+                    val reader = BufferedReader(InputStreamReader(inputStream))
+                    val json = reader.readText()
+                    val type = object : TypeToken<List<Deeplink>>() {}.type
+                    val importedHistory: List<Deeplink> = gson.fromJson(json, type)
+                    val currentHistory = historyViewModel.history.first()
+                    val currentDeeplinks = currentHistory.map { it.deeplink.deeplink }.toSet()
+                    val newDeeplinks = importedHistory.filter { !currentDeeplinks.contains(it.deeplink) }
+                    newDeeplinks.forEach { historyViewModel.addDeeplink(it) }
+                }
+            }
+        }
+    }
+
     DeepLinkTestAndroidTheme(darkTheme = useDarkTheme) {
-        if (onboardingCompleted == null) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
-        } else {
-            val navController = rememberNavController()
-            val historyViewModel: HistoryViewModel = viewModel(
-                factory = HistoryViewModel.HistoryViewModelFactory(
-                    context.applicationContext as Application
-                )
-            )
-            val snackbarHostState = remember { SnackbarHostState() }
-            val scope = rememberCoroutineScope()
-            val gson = Gson()
+        val navBackStackEntry by navController.currentBackStackEntryAsState()
+        val currentDestination = navBackStackEntry?.destination
+        val showBottomBar = currentDestination?.hierarchy?.any { dest ->
+            items.any { screen -> dest.route?.startsWith(screen.route) == true }
+        } == true
 
-            val exportLauncher = rememberLauncherForActivityResult(
-                contract = ActivityResultContracts.CreateDocument("application/json")
-            ) { uri ->
-                uri?.let {
-                    scope.launch {
-                        val history = historyViewModel.history.first()
-                        val json = gson.toJson(history)
-                        context.contentResolver.openOutputStream(it)?.use { outputStream ->
-                            outputStream.write(json.toByteArray())
-                        }
-                    }
-                }
-            }
-
-            val importLauncher = rememberLauncherForActivityResult(
-                contract = ActivityResultContracts.OpenDocument()
-            ) { uri ->
-                uri?.let {
-                    scope.launch {
-                        context.contentResolver.openInputStream(it)?.use { inputStream ->
-                            val reader = BufferedReader(InputStreamReader(inputStream))
-                            val json = reader.readText()
-                            val type = object : TypeToken<List<Deeplink>>() {}.type
-                            val importedHistory: List<Deeplink> = gson.fromJson(json, type)
-                            val currentHistory = historyViewModel.history.first()
-                            val currentDeeplinks = currentHistory.map { it.deeplink.deeplink }.toSet()
-                            val newDeeplinks = importedHistory.filter { !currentDeeplinks.contains(it.deeplink) }
-                            newDeeplinks.forEach { historyViewModel.addDeeplink(it) }
-                        }
-                    }
-                }
-            }
-
-            val navBackStackEntry by navController.currentBackStackEntryAsState()
-            val currentDestination = navBackStackEntry?.destination
-            val showBottomBar = currentDestination?.hierarchy?.any { dest -> items.any { it.route == dest.route } } == true
-
-            Scaffold(
-                snackbarHost = { SnackbarHost(snackbarHostState) },
-                bottomBar = {
-                    if (showBottomBar) {
-                        Column {
-                            BannerAd()
-                            NavigationBar {
-                                items.forEach { screen ->
-                                    val isSelected = currentDestination?.hierarchy?.any { it.route == screen.route } == true
-                                    NavigationBarItem(
-                                        icon = { screen.icon() },
-                                        label = { Text(stringResource(screen.resourceId)) },
-                                        selected = isSelected,
-                                        onClick = {
-                                            navController.navigate(screen.route) {
-                                                popUpTo(navController.graph.findStartDestination().id) {
-                                                    saveState = true
-                                                }
-                                                launchSingleTop = true
-                                                restoreState = true
+        Scaffold(
+            snackbarHost = { SnackbarHost(snackbarHostState) },
+            bottomBar = {
+                if (showBottomBar) {
+                    Column {
+                        BannerAd()
+                        NavigationBar {
+                            items.forEach { screen ->
+                                val isSelected = currentDestination?.hierarchy?.any { it.route == screen.route } == true
+                                NavigationBarItem(
+                                    icon = { screen.icon() },
+                                    label = { Text(stringResource(screen.resourceId)) },
+                                    selected = isSelected,
+                                    onClick = {
+                                        navController.navigate(screen.route) {
+                                            popUpTo(navController.graph.findStartDestination().id) {
+                                                saveState = true
                                             }
+                                            launchSingleTop = true
+                                            restoreState = true
                                         }
-                                    )
-                                }
+                                    }
+                                )
                             }
                         }
                     }
                 }
-            ) { innerPadding ->
-                NavHost(
-                    navController = navController,
-                    startDestination = Screen.Splash.route,
-                    modifier = Modifier.padding(innerPadding)
-                ) {
-                    composable(Screen.Splash.route) {
-                        if (onboardingCompleted != null) {
-                            LaunchedEffect(onboardingCompleted) {
-                                val route = if (onboardingCompleted == true) Screen.Main.route else Screen.Onboarding.route
-                                navController.navigate(route) {
-                                    popUpTo(Screen.Splash.route) { inclusive = true }
-                                }
-                            }
-                        } else {
+            }
+        ) { innerPadding ->
+            NavHost(
+                navController = navController,
+                startDestination = Screen.Splash.route,
+                modifier = Modifier.padding(innerPadding)
+            ) {
+                composable(Screen.Splash.route) {
+                    when (onboardingCompleted) {
+                        null -> {
                             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                                 CircularProgressIndicator()
                             }
                         }
+                        else -> {
+                            val route = if (onboardingCompleted == true) Screen.Main.route else Screen.Onboarding.route
+                            LaunchedEffect(Unit) {
+                                navController.navigate(route) {
+                                    popUpTo(Screen.Splash.route) { inclusive = true }
+                                }
+                            }
+                        }
                     }
-                    composable(
-                        route = "${Screen.Main.route}?deeplink={deeplink}",
+                }
+                composable(
+                    route = "${Screen.Main.route}?deeplink={deeplink}",
                         arguments = listOf(navArgument("deeplink") {
                             type = NavType.StringType
                             nullable = true
