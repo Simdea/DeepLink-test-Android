@@ -30,6 +30,16 @@ interface DeeplinkDao {
     @Query("SELECT * FROM collections ORDER BY name ASC")
     fun getAllCollections(): Flow<List<Collection>>
 
+    @Transaction
+    @Query("""
+        SELECT c.*, COUNT(dcr.deeplinkId) as deeplinkCount
+        FROM collections as c
+        LEFT JOIN deeplink_collection_cross_ref as dcr ON c.collectionId = dcr.collectionId
+        GROUP BY c.collectionId
+        ORDER BY c.name ASC
+    """)
+    fun getCollectionsWithDeeplinkCount(): Flow<List<CollectionWithDeeplinkCount>>
+
     @Update
     suspend fun update(deeplink: Deeplink)
 

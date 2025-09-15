@@ -40,16 +40,18 @@ import com.google.android.gms.ads.MobileAds
 import com.simdea.deeplinktester.data.Deeplink
 import com.simdea.deeplinktester.data.DeeplinkWithCollections
 import com.simdea.deeplinktester.ui.ads.BannerAd
-import com.simdea.deeplinktester.ui.editor.ParameterEditorScreen
 import com.simdea.deeplinktester.ui.history.HistoryScreen
 import com.simdea.deeplinktester.data.preferences.ThemeOption
 import com.simdea.deeplinktester.ui.history.HistoryViewModel
 import com.simdea.deeplinktester.ui.scanner.QrCodeScannerScreen
 import androidx.compose.foundation.isSystemInDarkTheme
+import com.simdea.deeplinktester.ui.collections.CollectionsScreen
 import com.simdea.deeplinktester.ui.main.MainViewModel
+import com.simdea.deeplinktester.ui.tester.TesterScreen
 import com.simdea.deeplinktester.ui.onboarding.OnboardingScreen
 import com.simdea.deeplinktester.ui.onboarding.OnboardingViewModel
 import com.simdea.deeplinktester.ui.settings.SettingsScreen
+import com.simdea.deeplinktester.ui.details.DetailsScreen
 import com.simdea.deeplinktester.ui.settings.SettingsViewModel
 import com.simdea.deeplinktester.ui.theme.DeepLinkTestAndroidTheme
 import kotlinx.coroutines.flow.first
@@ -58,19 +60,27 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.URI
 import java.net.URLEncoder
+import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.CollectionsBookmark
+import androidx.compose.material.icons.outlined.Flask
 
 sealed class Screen(val route: String, val resourceId: Int, val icon: @Composable () -> Unit) {
-    object Main : Screen("main", R.string.main_screen_title, { Icon(Icons.Filled.Home, contentDescription = null) })
-    object History : Screen("history", R.string.history_screen_title, { Icon(Icons.Filled.History, contentDescription = null) })
-    object Settings : Screen("settings", R.string.settings_screen_title, { Icon(Icons.Filled.Settings, contentDescription = null) })
+    object Main : Screen("main", R.string.main_screen_title, { Icon(Icons.Outlined.Flask, contentDescription = null) })
+    object History : Screen("history", R.string.history_screen_title, { Icon(Icons.Outlined.History, contentDescription = null) })
+    object Collections : Screen("collections", R.string.collections_screen_title, { Icon(Icons.Outlined.CollectionsBookmark, contentDescription = null) })
+    object Settings : Screen("settings", R.string.settings_screen_title, { Icon(Icons.Outlined.Settings, contentDescription = null) })
     object QrScanner : Screen("qrScanner", R.string.qr_scanner_title, { Icon(Icons.Filled.QrCodeScanner, contentDescription = null) })
-    object ParameterEditor : Screen("parameterEditor", R.string.parameter_editor_title, { Icon(Icons.Filled.Edit, contentDescription = null) })
     object Onboarding : Screen("onboarding", R.string.onboarding_screen_title, { Icon(Icons.Filled.Info, contentDescription = null) })
+    object Details : Screen("details/{deeplinkId}", R.string.details_screen_title, { Icon(Icons.Filled.Info, contentDescription = null) }) {
+        fun createRoute(deeplinkId: Int) = "details/$deeplinkId"
+    }
 }
 
 val items = listOf(
     Screen.Main,
     Screen.History,
+    Screen.Collections,
     Screen.Settings
 )
 
@@ -198,7 +208,7 @@ fun AppNavigation() {
                             nullable = true
                         })
                     ) { backStackEntry ->
-                        MainScreen(
+                        TesterScreen(
                             initialDeeplink = backStackEntry.arguments?.getString("deeplink"),
                             onLaunch = { deeplink ->
                                 historyViewModel.addDeeplink(deeplink)
@@ -217,11 +227,7 @@ fun AppNavigation() {
                                     }
                                 }
                             },
-                            onScanQrCode = { navController.navigate(Screen.QrScanner.route) },
-                            onEditParameters = { deeplink ->
-                                val encodedDeeplink = URLEncoder.encode(deeplink, "UTF-8")
-                                navController.navigate("${Screen.ParameterEditor.route}?deeplink=$encodedDeeplink")
-                            }
+                            onScanQrCode = { navController.navigate(Screen.QrScanner.route) }
                         )
                     }
                     composable(Screen.Onboarding.route) {
@@ -251,6 +257,9 @@ fun AppNavigation() {
                             showOnlyFavorites = showOnlyFavorites,
                             searchQuery = searchQuery,
                             selectedCollectionId = selectedCollectionId,
+                            onItemClick = { deeplinkId ->
+                                navController.navigate(Screen.Details.createRoute(deeplinkId))
+                            },
                             onToggleShowOnlyFavorites = { historyViewModel.toggleShowOnlyFavorites() },
                             onSearchQueryChanged = { historyViewModel.onSearchQueryChanged(it) },
                             onCollectionSelected = { historyViewModel.onCollectionSelected(it) },
@@ -281,6 +290,16 @@ fun AppNavigation() {
                             }
                         )
                     }
+                    composable(Screen.Collections.route) {
+                        val collections by historyViewModel.collectionsWithDeeplinkCount.collectAsState()
+                        val searchQuery by historyViewModel.collectionSearchQuery.collectAsState()
+                        CollectionsScreen(
+                            collections = collections,
+                            searchQuery = searchQuery,
+                            onSearchQueryChanged = { historyViewModel.onCollectionSearchQueryChanged(it) },
+                            onAddCollection = { historyViewModel.addCollection(it) }
+                        )
+                    }
                     composable(Screen.Settings.route) {
                         val settingsViewModel: SettingsViewModel = viewModel(
                             factory = SettingsViewModel.provideFactory(context.applicationContext as Application)
@@ -293,6 +312,41 @@ fun AppNavigation() {
                             onThemeOptionSelected = { settingsViewModel.updateThemeOption(it) }
                         )
                     }
+                    composable(
+                        route = Screen.Details.route,
+                        arguments = listOf(navArgument("deeplinkId") { type = NavType.IntType })
+                    ) { backStackEntry ->
+                        val deeplinkId = backStackEntry.arguments?.getInt("deeplinkId")
+                        val deeplink = historyViewModel.getDeeplinkById(deeplinkId)
+                        if (deeplink != null) {
+                            DetailsScreen(
+                                deeplink = deeplink,
+                                onNavigateUp = { navController.navigateUp() },
+                                onLaunch = { updatedDeeplink ->
+                                    historyViewModel.updateDeeplink(updatedDeeplink)
+                                    try {
+                                        val launchBrowser = Intent(Intent.ACTION_VIEW).apply {
+                                            data = Uri.parse(updatedDeeplink.deeplink)
+                                            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                                        }
+                                        context.startActivity(launchBrowser)
+                                    } catch (e: ActivityNotFoundException) {
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar(
+                                                message = context.getString(R.string.activity_not_found_error),
+                                                duration = SnackbarDuration.Short
+                                            )
+                                        }
+                                    }
+                                },
+                                onDelete = {
+                                    historyViewModel.removeDeeplink(it)
+                                    navController.navigateUp()
+                                },
+                                onToggleFavorite = { historyViewModel.toggleFavorite(it) }
+                            )
+                        }
+                    }
                     composable(Screen.QrScanner.route) {
                         QrCodeScannerScreen(
                             onQrCodeScanned = { deeplink ->
@@ -304,104 +358,9 @@ fun AppNavigation() {
                             onBack = { navController.popBackStack() }
                         )
                     }
-                    composable(
-                        route = "${Screen.ParameterEditor.route}?deeplink={deeplink}",
-                        arguments = listOf(navArgument("deeplink") {
-                            type = NavType.StringType; nullable = true
-                        })
-                    ) { backStackEntry ->
-                        ParameterEditorScreen(
-                            deeplink = backStackEntry.arguments?.getString("deeplink") ?: "",
-                            onApply = { editedDeeplink ->
-                                val encodedDeeplink = URLEncoder.encode(editedDeeplink, "UTF-8")
-                                navController.navigate("${Screen.Main.route}?deeplink=$encodedDeeplink") {
-                                    popUpTo(Screen.Main.route) { inclusive = true }
-                                }
-                            }
-                        )
-                    }
                 }
             }
         }
     }
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
-@Composable
-fun MainScreen(
-    initialDeeplink: String?,
-    onLaunch: (Deeplink) -> Unit,
-    onScanQrCode: () -> Unit,
-    onEditParameters: (String) -> Unit
-) {
-    var text by remember(initialDeeplink) { mutableStateOf(initialDeeplink ?: "") }
-    var isError by remember { mutableStateOf(false) }
-    val keyboardController = LocalSoftwareKeyboardController.current
-
-    fun validate(input: String) {
-        isError = try {
-            if (input.isBlank()) false else {
-                URI(input)
-                false
-            }
-        } catch (e: Exception) {
-            true
-        }
-    }
-
-    val submit = {
-        validate(text)
-        if (text.isNotBlank() && !isError) {
-            onLaunch(Deeplink(deeplink = text))
-            keyboardController?.hide()
-        }
-    }
-
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            OutlinedTextField(
-                value = text,
-                onValueChange = {
-                    text = it
-                    validate(it)
-                },
-                label = { Text(stringResource(R.string.deeplink_label)) },
-                modifier = Modifier.width(300.dp),
-                singleLine = true,
-                isError = isError,
-                supportingText = {
-                    if (isError) {
-                        Text(stringResource(R.string.invalid_uri_error))
-                    }
-                },
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(onDone = { submit() })
-            )
-            IconButton(onClick = onScanQrCode) {
-                Icon(Icons.Filled.QrCodeScanner, contentDescription = "Scan QR Code")
-            }
-            IconButton(
-                onClick = { onEditParameters(text) },
-                enabled = !isError && text.isNotBlank()
-            ) {
-                Icon(Icons.Filled.Edit, contentDescription = "Edit Parameters")
-            }
-        }
-        Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = submit) {
-            Text(stringResource(R.string.open_deeplink_button))
-        }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun DefaultPreview() {
-    DeepLinkTestAndroidTheme {
-        MainScreen(initialDeeplink = null, onLaunch = {}, onScanQrCode = {}, onEditParameters = {})
-    }
-}

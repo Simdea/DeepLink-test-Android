@@ -1,70 +1,24 @@
 package com.simdea.deeplinktester.ui.history
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.StarOutline
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Switch
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Label
-import androidx.compose.material.icons.filled.Replay
-import androidx.compose.material.icons.outlined.NewLabel
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Divider
-import androidx.compose.material3.Surface
-import androidx.compose.material3.TextButton
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.window.Dialog
-import com.simdea.deeplinktester.R
 import com.simdea.deeplinktester.data.Collection
 import com.simdea.deeplinktester.data.Deeplink
 import com.simdea.deeplinktester.data.DeeplinkWithCollections
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.ui.graphics.Color
 
-import androidx.compose.ui.tooling.preview.Preview
-@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScreen(
     history: List<DeeplinkWithCollections>,
@@ -72,6 +26,7 @@ fun HistoryScreen(
     showOnlyFavorites: Boolean,
     searchQuery: String,
     selectedCollectionId: Int?,
+    onItemClick: (Int) -> Unit,
     onToggleShowOnlyFavorites: () -> Unit,
     onSearchQueryChanged: (String) -> Unit,
     onCollectionSelected: (Int?) -> Unit,
@@ -82,360 +37,118 @@ fun HistoryScreen(
     onAddDeeplinkToCollection: (Int, Int) -> Unit,
     onRemoveDeeplinkFromCollection: (Int, Int) -> Unit
 ) {
-    var showRemoveDialog by remember { mutableStateOf<Deeplink?>(null) }
-    var showCollectionDialog by remember { mutableStateOf<DeeplinkWithCollections?>(null) }
-    var isCollectionDropdownExpanded by remember { mutableStateOf(false) }
-
-    showRemoveDialog?.let { deeplinkToRemove ->
-        AlertDialog(
-            onDismissRequest = { showRemoveDialog = null },
-            title = { Text(stringResource(R.string.remove_deeplink_dialog_title)) },
-            text = { Text(stringResource(R.string.remove_deeplink_dialog_text)) },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        onRemove(deeplinkToRemove)
-                        showRemoveDialog = null
-                    }
-                ) {
-                    Text(stringResource(R.string.remove_button))
-                }
-            },
-            dismissButton = {
-                Button(onClick = { showRemoveDialog = null }) {
-                    Text(stringResource(R.string.cancel_button))
-                }
-            }
-        )
-    }
-
-    showCollectionDialog?.let { item ->
-        CollectionManagementDialog(
-            item = item,
-            allCollections = collections,
-            onDismiss = { showCollectionDialog = null },
-            onAddCollection = onAddCollection,
-            onAddDeeplinkToCollection = onAddDeeplinkToCollection,
-            onRemoveDeeplinkFromCollection = onRemoveDeeplinkFromCollection
-        )
-    }
-
-    Column(modifier = Modifier.fillMaxSize()) {
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = onSearchQueryChanged,
-            label = { Text("Search") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            singleLine = true
-        )
-
-        ExposedDropdownMenuBox(
-            expanded = isCollectionDropdownExpanded,
-            onExpandedChange = { isCollectionDropdownExpanded = !isCollectionDropdownExpanded },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-        ) {
-            OutlinedTextField(
-                value = collections.find { it.collectionId == selectedCollectionId }?.name ?: "All Collections",
-                onValueChange = {},
-                readOnly = true,
-                label = { Text("Filter by Collection") },
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isCollectionDropdownExpanded) },
-                modifier = Modifier.menuAnchor().fillMaxWidth()
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("History & Favorites") }
             )
-            ExposedDropdownMenu(
-                expanded = isCollectionDropdownExpanded,
-                onDismissRequest = { isCollectionDropdownExpanded = false }
+        }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                DropdownMenuItem(
-                    text = { Text("All Collections") },
-                    onClick = {
-                        onCollectionSelected(null)
-                        isCollectionDropdownExpanded = false
-                    }
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = onSearchQueryChanged,
+                    modifier = Modifier.weight(1f),
+                    placeholder = { Text("Search history...") },
+                    leadingIcon = {
+                        Icon(Icons.Default.Search, contentDescription = "Search")
+                    },
+                    singleLine = true
                 )
-                collections.forEach { collection ->
-                    DropdownMenuItem(
-                        text = { Text(collection.name) },
-                        onClick = {
-                            onCollectionSelected(collection.collectionId)
-                            isCollectionDropdownExpanded = false
-                        }
+                Spacer(modifier = Modifier.width(16.dp))
+                Text("Favorites")
+                Switch(
+                    checked = showOnlyFavorites,
+                    onCheckedChange = { onToggleShowOnlyFavorites() },
+                    modifier = Modifier.padding(start = 8.dp)
+                )
+            }
+
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                items(
+                    items = history,
+                    key = { item -> item.deeplink.id }
+                ) { item ->
+                    HistoryItem(
+                        item = item,
+                        onClick = { onItemClick(item.deeplink.id) },
+                        onRetry = { onRetry(item.deeplink) },
+                        onRemove = { onRemove(item.deeplink) },
+                        onToggleFavorite = { onToggleFavorite(item.deeplink) }
                     )
                 }
             }
         }
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.End
-        ) {
-            Text("Show only favorites")
-            Spacer(modifier = Modifier.width(8.dp))
-            Switch(
-                checked = showOnlyFavorites,
-                onCheckedChange = { onToggleShowOnlyFavorites() }
-            )
-        }
-
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(top = 8.dp),
-            contentPadding = PaddingValues(16.dp)
-        ) {
-            items(
-                items = history,
-                key = { item -> item.deeplink.id }
-            ) { item ->
-                HistoryItem(
-                    item = item,
-                    onRetry = { onRetry(item.deeplink) },
-                    onRemove = { onRemove(item.deeplink) },
-                    onToggleFavorite = { onToggleFavorite(item.deeplink) },
-                    onManageCollections = { showCollectionDialog = item },
-                    onCollectionSelected = { onCollectionSelected(it) }
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-        }
     }
 }
 
-@Preview
-@Composable
-fun HistoryScreenPreview() {
-    val history = listOf(
-        DeeplinkWithCollections(
-            deeplink = Deeplink(id = 0, deeplink = "app://example.com/home", timestamp = System.currentTimeMillis(), isFavorite = false),
-            collections = listOf(Collection(collectionId = 0, name = "Social Media"))
-        ),
-        DeeplinkWithCollections(
-            deeplink = Deeplink(id = 1, deeplink = "app://example.com/profile", timestamp = System.currentTimeMillis(), isFavorite = true),
-            collections = listOf(Collection(collectionId = 1, name = "Shopping"))
-        )
-    )
-    val collections = listOf(
-        Collection(collectionId = 0, name = "Social Media"),
-        Collection(collectionId = 1, name = "Shopping")
-    )
-    HistoryScreen(
-        history = history,
-        collections = collections,
-        showOnlyFavorites = false,
-        searchQuery = "",
-        selectedCollectionId = null,
-        onToggleShowOnlyFavorites = {},
-        onSearchQueryChanged = {},
-        onCollectionSelected = {},
-        onRetry = {},
-        onRemove = {},
-        onToggleFavorite = {},
-        onAddCollection = {},
-        onAddDeeplinkToCollection = { _, _ -> },
-        onRemoveDeeplinkFromCollection = { _, _ -> }
-    )
-}
-
-@Preview
-@Composable
-fun HistoryItemPreview() {
-    val item = DeeplinkWithCollections(
-        deeplink = Deeplink(id = 0, deeplink = "app://example.com/home", timestamp = System.currentTimeMillis(), isFavorite = false),
-        collections = listOf(Collection(collectionId = 0, name = "Social Media"))
-    )
-    HistoryItem(
-        item = item,
-        onRetry = {},
-        onRemove = {},
-        onToggleFavorite = {},
-        onManageCollections = {},
-        onCollectionSelected = {}
-    )
-}
-
-@Preview
-@Composable
-fun CollectionManagementDialogPreview() {
-    val item = DeeplinkWithCollections(
-        deeplink = Deeplink(id = 0, deeplink = "app://example.com/home", timestamp = System.currentTimeMillis(), isFavorite = false),
-        collections = listOf(Collection(collectionId = 0, name = "Social Media"))
-    )
-    val allCollections = listOf(
-        Collection(collectionId = 0, name = "Social Media"),
-        Collection(collectionId = 1, name = "Shopping")
-    )
-    CollectionManagementDialog(
-        item = item,
-        allCollections = allCollections,
-        onDismiss = {},
-        onAddCollection = {},
-        onAddDeeplinkToCollection = { _, _ -> },
-        onRemoveDeeplinkFromCollection = { _, _ -> }
-    )
-}
-
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun HistoryItem(
     item: DeeplinkWithCollections,
+    onClick: () -> Unit,
     onRetry: () -> Unit,
     onRemove: () -> Unit,
-    onToggleFavorite: () -> Unit,
-    onManageCollections: () -> Unit,
-    onCollectionSelected: (Int) -> Unit
+    onToggleFavorite: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
+        onClick = onClick,
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                IconButton(onClick = onToggleFavorite) {
-                    Icon(
-                        imageVector = if (item.deeplink.isFavorite) Icons.Filled.Star else Icons.Outlined.StarOutline,
-                        contentDescription = "Favorite"
-                    )
-                }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.Link,
+                contentDescription = "Deeplink",
+                modifier = Modifier.size(40.dp)
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = item.deeplink.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
                 Text(
                     text = item.deeplink.deeplink,
-                    modifier = Modifier.weight(1f).padding(horizontal = 8.dp)
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.secondary
                 )
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = onManageCollections) {
-                        Icon(Icons.Outlined.NewLabel, contentDescription = "Manage Collections")
-                    }
-                    IconButton(onClick = onRetry) {
-                        Icon(Icons.Default.Replay, contentDescription = stringResource(R.string.retry_button))
-                    }
-                    IconButton(onClick = onRemove) {
-                        Icon(Icons.Default.Delete, tint = Color.Red, contentDescription = stringResource(R.string.remove_button))
-                    }
-                }
-            }
-            if (item.collections.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(8.dp))
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    item.collections.forEach { collection ->
-                        AssistChip(
-                            onClick = { onCollectionSelected(collection.collectionId) },
-                            label = { Text(collection.name) }
-                        )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(onClick = onRemove) {
+                        Text("Delete")
+                    }
+                    Button(onClick = onRetry) {
+                        Text("Retry")
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-fun CollectionManagementDialog(
-    item: DeeplinkWithCollections,
-    allCollections: List<Collection>,
-    onDismiss: () -> Unit,
-    onAddCollection: (String) -> Unit,
-    onAddDeeplinkToCollection: (Int, Int) -> Unit,
-    onRemoveDeeplinkFromCollection: (Int, Int) -> Unit
-) {
-    val deeplinkCollectionIds = remember(item) { item.collections.map { it.collectionId }.toSet() }
-    var newCollectionName by remember { mutableStateOf("") }
-
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            shape = MaterialTheme.shapes.medium
-        ) {
-            Column(
-                modifier = Modifier
-                    .padding(16.dp)
-                    .imePadding()
-            ) {
-                Text("Manage Collections", style = MaterialTheme.typography.titleLarge)
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Add new collection UI
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    OutlinedTextField(
-                        value = newCollectionName,
-                        onValueChange = { newCollectionName = it },
-                        label = { Text("New collection name") },
-                        modifier = Modifier.weight(1f),
-                        keyboardActions = KeyboardActions(onDone = {
-                            if (newCollectionName.isNotBlank()) {
-                                onAddCollection(newCollectionName)
-                                newCollectionName = ""
-                            }
-                        }),
-                        singleLine = true
-                    )
-                    IconButton(
-                        onClick = {
-                            if (newCollectionName.isNotBlank()) {
-                                onAddCollection(newCollectionName)
-                                newCollectionName = ""
-                            }
-                        },
-                        enabled = newCollectionName.isNotBlank()
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = "Add Collection")
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-                Divider()
-
-                // List of existing collections
-                if (allCollections.isEmpty()) {
-                    Box(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text("No collections yet. Add one above.")
-                    }
-                } else {
-                    LazyColumn {
-                        items(allCollections) { collection ->
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Checkbox(
-                                    checked = deeplinkCollectionIds.contains(collection.collectionId),
-                                    onCheckedChange = { isChecked ->
-                                        if (isChecked) {
-                                            onAddDeeplinkToCollection(item.deeplink.id, collection.collectionId)
-                                        } else {
-                                            onRemoveDeeplinkFromCollection(item.deeplink.id, collection.collectionId)
-                                        }
-                                    }
-                                )
-                                Text(collection.name, modifier = Modifier.padding(start = 8.dp))
-                            }
-                        }
-                    }
-                }
-
-                Divider()
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Dialog action buttons
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    TextButton(onClick = onDismiss) {
-                        Text("Done")
-                    }
-                }
+            IconButton(onClick = onToggleFavorite) {
+                Icon(
+                    imageVector = if (item.deeplink.isFavorite) Icons.Filled.Star else Icons.Outlined.StarOutline,
+                    contentDescription = "Favorite",
+                    tint = if (item.deeplink.isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                )
             }
         }
     }

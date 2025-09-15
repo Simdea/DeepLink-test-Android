@@ -7,6 +7,7 @@ import androidx.room.PrimaryKey
 data class Deeplink(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
+    val title: String = "",
     val deeplink: String,
     val timestamp: Long = System.currentTimeMillis(),
     val isFavorite: Boolean = false
