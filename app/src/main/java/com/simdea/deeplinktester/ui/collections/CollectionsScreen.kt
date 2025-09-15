@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.simdea.deeplinktester.data.CollectionWithDeeplinkCount
+import com.simdea.deeplinktester.ui.composables.NewCollectionDialog
 import com.simdea.deeplinktester.ui.composables.PrimaryButton
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -27,7 +28,7 @@ fun CollectionsScreen(
     var showDialog by remember { mutableStateOf(false) }
 
     if (showDialog) {
-        NewACollectionDialog(
+        NewCollectionDialog(
             onDismiss = { showDialog = false },
             onConfirm = {
                 onAddCollection(it)
@@ -119,36 +120,4 @@ fun CollectionItem(collection: CollectionWithDeeplinkCount) {
             }
         }
     }
-}
-
-@Composable
-private fun NewACollectionDialog(
-    onDismiss: () -> Unit,
-    onConfirm: (String) -> Unit
-) {
-    var text by remember { mutableStateOf("") }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("New Collection") },
-        text = {
-            OutlinedTextField(
-                value = text,
-                onValueChange = { text = it },
-                label = { Text("Collection name") }
-            )
-        },
-        confirmButton = {
-            Button(
-                onClick = { onConfirm(text) },
-                enabled = text.isNotBlank()
-            ) {
-                Text("Create")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        }
-    )
 }

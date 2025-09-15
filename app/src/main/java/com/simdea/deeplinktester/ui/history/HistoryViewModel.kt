@@ -98,6 +98,10 @@ class HistoryViewModel(private val deeplinkDao: DeeplinkDao) : ViewModel() {
         return history.value.find { it.deeplink.id == id }?.deeplink
     }
 
+    fun getDeeplinkWithCollectionsById(id: Int?): DeeplinkWithCollections? {
+        return history.value.find { it.deeplink.id == id }
+    }
+
     fun updateDeeplink(deeplink: Deeplink) {
         viewModelScope.launch {
             deeplinkDao.update(deeplink)

@@ -328,10 +328,13 @@ fun AppNavigation() {
                         arguments = listOf(navArgument("deeplinkId") { type = NavType.IntType })
                     ) { backStackEntry ->
                         val deeplinkId = backStackEntry.arguments?.getInt("deeplinkId")
-                        val deeplink = historyViewModel.getDeeplinkById(deeplinkId)
-                        if (deeplink != null) {
+                        val deeplinkWithCollections = historyViewModel.getDeeplinkWithCollectionsById(deeplinkId)
+                        val allCollections by historyViewModel.collections.collectAsState()
+
+                        if (deeplinkWithCollections != null) {
                             DetailsScreen(
-                                deeplink = deeplink,
+                                deeplinkWithCollections = deeplinkWithCollections,
+                                allCollections = allCollections,
                                 onNavigateUp = { navController.navigateUp() },
                                 onLaunch = { updatedDeeplink ->
                                     historyViewModel.updateDeeplink(updatedDeeplink)
@@ -354,7 +357,10 @@ fun AppNavigation() {
                                     historyViewModel.removeDeeplink(it)
                                     navController.navigateUp()
                                 },
-                                onToggleFavorite = { historyViewModel.toggleFavorite(it) }
+                                onToggleFavorite = { historyViewModel.toggleFavorite(it) },
+                                onAddCollection = { historyViewModel.addCollection(it) },
+                                onAddDeeplinkToCollection = { dId, cId -> historyViewModel.addDeeplinkToCollection(dId, cId) },
+                                onRemoveDeeplinkFromCollection = { dId, cId -> historyViewModel.removeDeeplinkFromCollection(dId, cId) }
                             )
                         }
                     }
