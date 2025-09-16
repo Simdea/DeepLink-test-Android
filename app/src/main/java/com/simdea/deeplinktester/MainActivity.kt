@@ -379,9 +379,10 @@ fun AppNavigation() {
                         val deeplinkWithCollections by historyViewModel.selectedDeeplink.collectAsState()
                         val allCollections by historyViewModel.collections.collectAsState()
 
-                        if (deeplinkWithCollections != null) {
+                        val currentDeeplinkWithCollections = deeplinkWithCollections
+                        if (currentDeeplinkWithCollections != null) {
                             DetailsScreen(
-                                deeplinkWithCollections = deeplinkWithCollections,
+                                deeplinkWithCollections = currentDeeplinkWithCollections,
                                 allCollections = allCollections,
                                 onNavigateUp = { navController.navigateUp() },
                                 onLaunch = { updatedDeeplink ->
@@ -406,7 +407,7 @@ fun AppNavigation() {
                                     navController.navigateUp()
                                 },
                                 onToggleFavorite = { historyViewModel.toggleFavorite(it) },
-                                onAddCollection = historyViewModel::addCollectionAndGetId,
+                                onAddCollectionAndGetId = historyViewModel::addCollectionAndGetId,
                                 onAddDeeplinkToCollection = { dId, cId -> historyViewModel.addDeeplinkToCollection(dId, cId) },
                                 onRemoveDeeplinkFromCollection = { dId, cId -> historyViewModel.removeDeeplinkFromCollection(dId, cId) }
                             )
