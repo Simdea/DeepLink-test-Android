@@ -60,6 +60,21 @@ class HistoryViewModel(private val deeplinkDao: DeeplinkDao) : ViewModel() {
         initialValue = emptyList()
     )
 
+    val deeplinksInSelectedCollection: StateFlow<List<DeeplinkWithCollections>> = combine(
+        history,
+        _selectedCollectionId
+    ) { history, collectionId ->
+        if (collectionId == null) {
+            emptyList()
+        } else {
+            history.filter { it.collections.any { c -> c.collectionId == collectionId } }
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
     fun onSearchQueryChanged(query: String) {
         _searchQuery.value = query
     }
@@ -96,6 +111,10 @@ class HistoryViewModel(private val deeplinkDao: DeeplinkDao) : ViewModel() {
 
     fun getDeeplinkById(id: Int?): Deeplink? {
         return history.value.find { it.deeplink.id == id }?.deeplink
+    }
+
+    fun getDeeplinkWithCollectionsById(id: Int?): DeeplinkWithCollections? {
+        return history.value.find { it.deeplink.id == id }
     }
 
     fun updateDeeplink(deeplink: Deeplink) {
@@ -141,6 +160,18 @@ class HistoryViewModel(private val deeplinkDao: DeeplinkDao) : ViewModel() {
                     collectionId = collectionId
                 )
             )
+        }
+    }
+
+    fun updateCollection(collection: Collection) {
+        viewModelScope.launch {
+            deeplinkDao.updateCollection(collection)
+        }
+    }
+
+    fun deleteCollection(collection: Collection) {
+        viewModelScope.launch {
+            deeplinkDao.deleteCollection(collection)
         }
     }
 

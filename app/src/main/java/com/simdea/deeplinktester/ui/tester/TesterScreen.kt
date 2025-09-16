@@ -6,7 +6,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -29,14 +32,31 @@ fun TesterScreen(
     onLaunch: (Deeplink) -> Unit,
     onScanQrCode: () -> Unit
 ) {
-    var text by remember(initialDeeplink) { mutableStateOf(initialDeeplink ?: "") }
-    var isError by remember { mutableStateOf(false) }
+    var baseUri by remember { mutableStateOf("") }
     val parameters = remember { mutableStateListOf<Parameter>() }
+    var isError by remember { mutableStateOf(false) }
+    var parametersVisible by remember { mutableStateOf(false) }
 
-    fun validate(input: String) {
+    val fullUri by remember {
+        derivedStateOf {
+            try {
+                val builder = Uri.parse(baseUri).buildUpon()
+                parameters.forEach { p ->
+                    if (p.key.isNotBlank()) {
+                        builder.appendQueryParameter(p.key, p.value)
+                    }
+                }
+                builder.build().toString()
+            } catch (e: Exception) {
+                baseUri // If baseUri is invalid, just return it
+            }
+        }
+    }
+
+    fun validate(uri: String) {
         isError = try {
-            if (input.isBlank()) false else {
-                URI(input)
+            if (uri.isBlank()) false else {
+                URI(uri)
                 false
             }
         } catch (e: Exception) {
@@ -46,25 +66,28 @@ fun TesterScreen(
 
     LaunchedEffect(initialDeeplink) {
         initialDeeplink?.let {
-            val uri = Uri.parse(it)
-            text = uri.buildUpon().clearQuery().build().toString()
-            parameters.clear()
-            uri.queryParameterNames.forEach { key ->
-                parameters.add(Parameter(key, uri.getQueryParameter(key) ?: ""))
+            try {
+                val uri = Uri.parse(it)
+                baseUri = uri.buildUpon().clearQuery().build().toString()
+                parameters.clear()
+                uri.queryParameterNames.forEach { key ->
+                    parameters.add(Parameter(key, uri.getQueryParameter(key) ?: ""))
+                }
+                if (parameters.isNotEmpty()) {
+                    parametersVisible = true
+                }
+                validate(baseUri)
+            } catch (e: Exception) {
+                baseUri = it
+                validate(it)
             }
         }
     }
 
     val submit = {
-        validate(text)
-        if (text.isNotBlank() && !isError) {
-            val uriBuilder = Uri.parse(text).buildUpon()
-            parameters.forEach { param ->
-                if (param.key.isNotBlank()) {
-                    uriBuilder.appendQueryParameter(param.key, param.value)
-                }
-            }
-            val finalUri = uriBuilder.build()
+        validate(fullUri)
+        if (fullUri.isNotBlank() && !isError) {
+            val finalUri = Uri.parse(fullUri)
             val title = finalUri.host ?: "Untitled"
             onLaunch(Deeplink(title = title, deeplink = finalUri.toString()))
         }
@@ -85,23 +108,41 @@ fun TesterScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             OutlinedTextField(
-                value = text,
-                onValueChange = {
-                    text = it
-                    validate(it)
+                value = fullUri,
+                onValueChange = { newValue ->
+                    try {
+                        val uri = Uri.parse(newValue)
+                        baseUri = uri.buildUpon().clearQuery().build().toString()
+                        parameters.clear()
+                        uri.queryParameterNames.forEach { key ->
+                            parameters.add(Parameter(key, uri.getQueryParameter(key) ?: ""))
+                        }
+                        validate(baseUri)
+                    } catch (e: Exception) {
+                        baseUri = newValue
+                        validate(newValue)
+                    }
                 },
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text("URI") },
                 placeholder = { Text("app://example.com/path") },
                 trailingIcon = {
-                    IconButton(onClick = onScanQrCode) {
-                        Icon(Icons.Default.QrCodeScanner, contentDescription = "Scan QR Code")
+                    Row {
+                        IconButton(
+                            onClick = { parametersVisible = !parametersVisible },
+                            enabled = !isError && baseUri.isNotBlank()
+                        ) {
+                            Icon(Icons.Default.Edit, contentDescription = "Edit Parameters")
+                        }
+                        IconButton(onClick = onScanQrCode) {
+                            Icon(Icons.Default.QrCodeScanner, contentDescription = "Scan QR Code")
+                        }
                     }
                 },
                 isError = isError,
                 singleLine = true
             )
-            if (!isError && text.isNotBlank()) {
+            if (!isError && baseUri.isNotBlank()) {
                 Text(
                     text = "Valid syntax",
                     color = MaterialTheme.colorScheme.tertiary,
@@ -121,48 +162,52 @@ fun TesterScreen(
 
             PrimaryButton(text = "Launch Deeplink", onClick = submit)
 
-            Spacer(modifier = Modifier.height(24.dp))
+            AnimatedVisibility(visible = parametersVisible) {
+                Column {
+                    Spacer(modifier = Modifier.height(24.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "URI Parameters",
-                    style = MaterialTheme.typography.titleLarge
-                )
-                IconButton(onClick = { parameters.add(Parameter("", "")) }) {
-                    Icon(Icons.Default.Add, contentDescription = "Add Parameter")
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                itemsIndexed(parameters) { index, param ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        OutlinedTextField(
-                            value = param.key,
-                            onValueChange = { parameters[index] = param.copy(key = it) },
-                            label = { Text("Key") },
-                            modifier = Modifier.weight(1f)
+                        Text(
+                            text = "URI Parameters",
+                            style = MaterialTheme.typography.titleLarge
                         )
-                        OutlinedTextField(
-                            value = param.value,
-                            onValueChange = { parameters[index] = param.copy(value = it) },
-                            label = { Text("Value") },
-                            modifier = Modifier.weight(1f)
-                        )
-                        IconButton(onClick = { parameters.removeAt(index) }) {
-                            Icon(Icons.Default.Delete, contentDescription = "Delete Parameter", tint = Color.Red)
+                        IconButton(onClick = { parameters.add(Parameter("", "")) }) {
+                            Icon(Icons.Default.Add, contentDescription = "Add Parameter")
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        itemsIndexed(parameters) { index, param ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                OutlinedTextField(
+                                    value = param.key,
+                                    onValueChange = { parameters[index] = param.copy(key = it) },
+                                    label = { Text("Key") },
+                                    modifier = Modifier.weight(1f)
+                                )
+                                OutlinedTextField(
+                                    value = param.value,
+                                    onValueChange = { parameters[index] = param.copy(value = it) },
+                                    label = { Text("Value") },
+                                    modifier = Modifier.weight(1f)
+                                )
+                                IconButton(onClick = { parameters.removeAt(index) }) {
+                                    Icon(Icons.Default.Delete, contentDescription = "Delete Parameter", tint = Color.Red)
+                                }
+                            }
                         }
                     }
                 }

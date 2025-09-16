@@ -8,6 +8,16 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -15,22 +25,57 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.simdea.deeplinktester.R
+import com.simdea.deeplinktester.data.Collection
 import com.simdea.deeplinktester.data.Deeplink
+import com.simdea.deeplinktester.data.DeeplinkWithCollections
+import com.simdea.deeplinktester.ui.composables.AddToCollectionDialog
 import com.simdea.deeplinktester.ui.composables.PrimaryButton
 import com.simdea.deeplinktester.ui.tester.Parameter
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun DetailsScreen(
-    deeplink: Deeplink,
+    deeplinkWithCollections: DeeplinkWithCollections,
+    allCollections: List<Collection>,
     onNavigateUp: () -> Unit,
     onLaunch: (Deeplink) -> Unit,
     onDelete: (Deeplink) -> Unit,
-    onToggleFavorite: (Deeplink) -> Unit
+    onToggleFavorite: (Deeplink) -> Unit,
+    onAddCollection: (String) -> Unit,
+    onAddDeeplinkToCollection: (Int, Int) -> Unit,
+    onRemoveDeeplinkFromCollection: (Int, Int) -> Unit
 ) {
+    val deeplink = deeplinkWithCollections.deeplink
     var text by remember { mutableStateOf(deeplink.deeplink) }
     var isError by remember { mutableStateOf(false) }
     val parameters = remember { mutableStateListOf<Parameter>() }
+    var showAddToCollectionDialog by remember { mutableStateOf(false) }
+
+    if (showAddToCollectionDialog) {
+        val deeplinkCollectionIds = remember(deeplinkWithCollections) {
+            deeplinkWithCollections.collections.map { it.collectionId }.toSet()
+        }
+        AddToCollectionDialog(
+            allCollections = allCollections,
+            deeplinkCollectionIds = deeplinkCollectionIds,
+            onDismiss = { showAddToCollectionDialog = false },
+            onConfirm = { newSelectedIds, newCollectionName ->
+                // Handle creating a new collection first
+                if (newCollectionName != null) {
+                    onAddCollection(newCollectionName)
+                }
+
+                // Handle changes in selections
+                val addedIds = newSelectedIds - deeplinkCollectionIds
+                val removedIds = deeplinkCollectionIds - newSelectedIds
+
+                addedIds.forEach { onAddDeeplinkToCollection(deeplink.id, it) }
+                removedIds.forEach { onRemoveDeeplinkFromCollection(deeplink.id, it) }
+
+                showAddToCollectionDialog = false
+            }
+        )
+    }
 
     fun validate(input: String) {
         isError = try {
@@ -148,6 +193,39 @@ fun DetailsScreen(
                     }
                 }
             }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Collections",
+                    style = MaterialTheme.typography.titleLarge
+                )
+                TextButton(onClick = { showAddToCollectionDialog = true }) {
+                    Text("+ Add to Collection")
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                deeplinkWithCollections.collections.forEach { collection ->
+                    AssistChip(
+                        onClick = { /* Non-interactive, for display only */ },
+                        label = { Text(collection.name) }
+                    )
+                }
+            }
+
+
+            Spacer(modifier = Modifier.weight(1f))
 
             Row(
                 modifier = Modifier
