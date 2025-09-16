@@ -122,13 +122,14 @@ class HistoryViewModel(private val deeplinkDao: DeeplinkDao) : ViewModel() {
         _selectedDeeplinkId.value = id
     }
 
-    val selectedDeeplink: StateFlow<DeeplinkWithCollections?> = _selectedDeeplinkId.flatMapLatest { id ->
+    val selectedDeeplink: StateFlow<DeeplinkWithCollections?> = combine(
+        _selectedDeeplinkId,
+        history
+    ) { id, deeplinks ->
         if (id == null) {
-            flowOf(null)
+            null
         } else {
-            history.map { deeplinks ->
-                deeplinks.find { it.deeplink.id == id }
-            }
+            deeplinks.find { it.deeplink.id == id }
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
