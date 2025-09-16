@@ -54,7 +54,7 @@ fun HistoryItem(
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = item.deeplink.title,
+                    text = item.deeplink.title.ifBlank { item.deeplink.deeplink },
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
