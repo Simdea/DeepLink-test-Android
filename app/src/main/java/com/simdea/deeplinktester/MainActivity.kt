@@ -407,29 +407,10 @@ fun AppNavigation() {
                                     }
                                 },
                                 onDelete = {
-                                    historyViewModel.removeDeeplink(it)
+                                    historyViewModel.removeDeeplink(currentDeeplinkWithCollections.deeplink)
                                     navController.navigateUp()
                                 },
-                                onToggleFavorite = { historyViewModel.toggleFavorite(it) },
-                                onSaveAndLaunch = { updatedDeeplink, shouldLaunch ->
-                                    historyViewModel.updateDeeplink(updatedDeeplink)
-                                    if (shouldLaunch) {
-                                        try {
-                                            val launchBrowser = Intent(Intent.ACTION_VIEW).apply {
-                                                data = Uri.parse(updatedDeeplink.deeplink)
-                                                flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                                            }
-                                            context.startActivity(launchBrowser)
-                                        } catch (e: ActivityNotFoundException) {
-                                            scope.launch {
-                                                snackbarHostState.showSnackbar(
-                                                    message = context.getString(R.string.activity_not_found_error),
-                                                    duration = SnackbarDuration.Short
-                                                )
-                                            }
-                                        }
-                                    }
-                                },
+                                onToggleFavorite = { historyViewModel.toggleFavorite(currentDeeplinkWithCollections.deeplink) },
                                 onAddCollectionAndGetId = historyViewModel::addCollectionAndGetId,
                                 onAddDeeplinkToCollection = { dId, cId -> historyViewModel.addDeeplinkToCollection(dId, cId) },
                                 onRemoveDeeplinkFromCollection = { dId, cId -> historyViewModel.removeDeeplinkFromCollection(dId, cId) },
