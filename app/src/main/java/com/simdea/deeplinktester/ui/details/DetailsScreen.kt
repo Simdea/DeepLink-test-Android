@@ -42,7 +42,7 @@ fun DetailsScreen(
     onLaunch: (Deeplink) -> Unit,
     onDelete: (Deeplink) -> Unit,
     onToggleFavorite: (Deeplink) -> Unit,
-    onAddCollection: suspend (String) -> Long,
+    onAddCollectionAndGetId: suspend (String) -> Long,
     onAddDeeplinkToCollection: (Int, Int) -> Unit,
     onRemoveDeeplinkFromCollection: (Int, Int) -> Unit
 ) {
@@ -60,7 +60,7 @@ fun DetailsScreen(
             onConfirm = { selectedCollectionId, newCollectionName ->
                 scope.launch {
                     if (newCollectionName != null && newCollectionName.isNotBlank()) {
-                        val newCollectionId = onAddCollection(newCollectionName)
+                        val newCollectionId = onAddCollectionAndGetId(newCollectionName)
                         onAddDeeplinkToCollection(deeplink.id, newCollectionId.toInt())
                     } else if (selectedCollectionId != null) {
                         onAddDeeplinkToCollection(deeplink.id, selectedCollectionId)

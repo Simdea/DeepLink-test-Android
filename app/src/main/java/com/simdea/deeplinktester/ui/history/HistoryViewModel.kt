@@ -16,6 +16,9 @@ import kotlinx.coroutines.flow.StateFlow
 import com.simdea.deeplinktester.data.CollectionWithDeeplinkCount
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -113,9 +116,21 @@ class HistoryViewModel(private val deeplinkDao: DeeplinkDao) : ViewModel() {
         return history.value.find { it.deeplink.id == id }?.deeplink
     }
 
-    fun getDeeplinkWithCollectionsById(id: Int?): DeeplinkWithCollections? {
-        return history.value.find { it.deeplink.id == id }
+    private val _selectedDeeplinkId = MutableStateFlow<Int?>(null)
+
+    fun selectDeeplink(id: Int?) {
+        _selectedDeeplinkId.value = id
     }
+
+    val selectedDeeplink: StateFlow<DeeplinkWithCollections?> = _selectedDeeplinkId.flatMapLatest { id ->
+        if (id == null) {
+            flowOf(null)
+        } else {
+            history.map { deeplinks ->
+                deeplinks.find { it.deeplink.id == id }
+            }
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     fun updateDeeplink(deeplink: Deeplink) {
         viewModelScope.launch {
@@ -146,8 +161,14 @@ class HistoryViewModel(private val deeplinkDao: DeeplinkDao) : ViewModel() {
             initialValue = emptyList()
         )
 
-    suspend fun addCollection(name: String): Long {
+    suspend fun addCollectionAndGetId(name: String): Long {
         return deeplinkDao.insertCollection(Collection(name = name))
+    }
+
+    fun addCollection(name: String) {
+        viewModelScope.launch {
+            deeplinkDao.insertCollection(Collection(name = name))
+        }
     }
 
     fun addDeeplinkToCollection(deeplinkId: Int, collectionId: Int) {
