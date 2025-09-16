@@ -120,10 +120,16 @@ class HistoryViewModel(private val deeplinkDao: DeeplinkDao) : ViewModel() {
         _selectedDeeplinkId.value = id
     }
 
+    private val _refreshTrigger = MutableStateFlow(0)
+    fun triggerRefresh() {
+        _refreshTrigger.value++
+    }
+
     val selectedDeeplink: StateFlow<DeeplinkWithCollections?> = combine(
         _selectedDeeplinkId,
-        history
-    ) { id, deeplinks ->
+        history,
+        _refreshTrigger
+    ) { id, deeplinks, _ ->
         if (id == null) {
             null
         } else {
