@@ -25,13 +25,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.simdea.deeplinktester.R
-import kotlinx.coroutines.launch
 import com.simdea.deeplinktester.data.Collection
 import com.simdea.deeplinktester.data.Deeplink
 import com.simdea.deeplinktester.data.DeeplinkWithCollections
 import com.simdea.deeplinktester.ui.composables.AddToCollectionDialog
 import com.simdea.deeplinktester.ui.composables.PrimaryButton
 import com.simdea.deeplinktester.ui.tester.Parameter
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -39,20 +39,23 @@ fun DetailsScreen(
     deeplinkWithCollections: DeeplinkWithCollections,
     allCollections: List<Collection>,
     onNavigateUp: () -> Unit,
-    onLaunch: (Deeplink) -> Unit,
+    onSaveAndLaunch: (Deeplink, Boolean) -> Unit,
     onDelete: (Deeplink) -> Unit,
     onToggleFavorite: (Deeplink) -> Unit,
     onAddCollectionAndGetId: suspend (String) -> Long,
     onAddDeeplinkToCollection: (Int, Int) -> Unit,
-    onRemoveDeeplinkFromCollection: (Int, Int) -> Unit
+    onRemoveDeeplinkFromCollection: (Int, Int) -> Unit,
+    snackbarHostState: SnackbarHostState,
+    onDataChanged: () -> Unit
 ) {
     val deeplink = deeplinkWithCollections.deeplink
+    var title by remember { mutableStateOf(deeplink.title) }
     var text by remember { mutableStateOf(deeplink.deeplink) }
     var isError by remember { mutableStateOf(false) }
     val parameters = remember { mutableStateListOf<Parameter>() }
     var showAddToCollectionDialog by remember { mutableStateOf(false) }
-
     val scope = rememberCoroutineScope()
+
     if (showAddToCollectionDialog) {
         AddToCollectionDialog(
             allCollections = allCollections,
@@ -62,10 +65,14 @@ fun DetailsScreen(
                     if (newCollectionName != null && newCollectionName.isNotBlank()) {
                         val newCollectionId = onAddCollectionAndGetId(newCollectionName)
                         onAddDeeplinkToCollection(deeplink.id, newCollectionId.toInt())
+                        snackbarHostState.showSnackbar("Added to new collection '$newCollectionName'")
                     } else if (selectedCollectionId != null) {
                         onAddDeeplinkToCollection(deeplink.id, selectedCollectionId)
+                        val collectionName = allCollections.find { it.collectionId == selectedCollectionId }?.name
+                        snackbarHostState.showSnackbar("Added to collection '$collectionName'")
                     }
                     showAddToCollectionDialog = false
+                    onDataChanged()
                 }
             }
         )
@@ -85,13 +92,14 @@ fun DetailsScreen(
     LaunchedEffect(deeplink) {
         val uri = Uri.parse(deeplink.deeplink)
         text = uri.buildUpon().clearQuery().build().toString()
+        title = deeplink.title
         parameters.clear()
         uri.queryParameterNames.forEach { key ->
             parameters.add(Parameter(key, uri.getQueryParameter(key) ?: ""))
         }
     }
 
-    val submit = {
+    val submit = { shouldLaunch: Boolean ->
         validate(text)
         if (text.isNotBlank() && !isError) {
             val uriBuilder = Uri.parse(text).buildUpon()
@@ -100,7 +108,9 @@ fun DetailsScreen(
                     uriBuilder.appendQueryParameter(param.key, param.value)
                 }
             }
-            onLaunch(deeplink.copy(deeplink = uriBuilder.build().toString()))
+            val updatedDeeplink = deeplink.copy(title = title, deeplink = uriBuilder.build().toString())
+            onSaveAndLaunch(updatedDeeplink, shouldLaunch)
+            onDataChanged() // Refresh after saving
         }
     }
 
@@ -114,7 +124,23 @@ fun DetailsScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { onToggleFavorite(deeplink) }) {
+                    IconButton(onClick = {
+                        submit(false)
+                        scope.launch {
+                            snackbarHostState.showSnackbar("Deeplink saved")
+                        }
+                    }) {
+                        Icon(Icons.Default.Save, contentDescription = "Save")
+                    }
+                    IconButton(onClick = {
+                        onToggleFavorite(deeplink)
+                        onDataChanged()
+                        scope.launch {
+                            snackbarHostState.showSnackbar(
+                                if (deeplink.isFavorite) "Removed from favorites" else "Added to favorites"
+                            )
+                        }
+                    }) {
                         Icon(
                             if (deeplink.isFavorite) Icons.Filled.Star else Icons.Outlined.Star,
                             contentDescription = "Favorite"
@@ -217,7 +243,13 @@ fun DetailsScreen(
                         label = { Text(collection.name) },
                         trailingIcon = {
                             IconButton(
-                                onClick = { onRemoveDeeplinkFromCollection(deeplink.id, collection.collectionId) },
+                                onClick = {
+                                    onRemoveDeeplinkFromCollection(deeplink.id, collection.collectionId)
+                                    onDataChanged()
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar("Removed from '${collection.name}'")
+                                    }
+                                },
                                 modifier = Modifier.size(18.dp)
                             ) {
                                 Icon(Icons.Default.Close, contentDescription = "Remove from collection")
@@ -237,15 +269,20 @@ fun DetailsScreen(
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Button(
-                    onClick = { onDelete(deeplink) },
+                    onClick = {
+                        onDelete(deeplink)
+                        scope.launch {
+                            snackbarHostState.showSnackbar("Deeplink deleted")
+                        }
+                    },
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
                 ) {
                     Text("Delete")
                 }
                 PrimaryButton(
-                    text = "Launch",
-                    onClick = submit,
+                    text = "Save & Launch",
+                    onClick = { submit(true) },
                     modifier = Modifier.weight(1f)
                 )
             }

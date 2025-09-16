@@ -16,9 +16,6 @@ import kotlinx.coroutines.flow.StateFlow
 import com.simdea.deeplinktester.data.CollectionWithDeeplinkCount
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -96,7 +93,12 @@ class HistoryViewModel(private val deeplinkDao: DeeplinkDao) : ViewModel() {
 
     fun addDeeplink(deeplink: Deeplink) {
         viewModelScope.launch {
-            deeplinkDao.insert(deeplink)
+            val deeplinkToInsert = if (deeplink.title.isBlank()) {
+                deeplink.copy(title = deeplink.deeplink)
+            } else {
+                deeplink
+            }
+            deeplinkDao.insert(deeplinkToInsert)
         }
     }
 
@@ -110,10 +112,6 @@ class HistoryViewModel(private val deeplinkDao: DeeplinkDao) : ViewModel() {
         viewModelScope.launch {
             deeplinkDao.update(deeplink.copy(isFavorite = !deeplink.isFavorite))
         }
-    }
-
-    fun getDeeplinkById(id: Int?): Deeplink? {
-        return history.value.find { it.deeplink.id == id }?.deeplink
     }
 
     private val _selectedDeeplinkId = MutableStateFlow<Int?>(null)

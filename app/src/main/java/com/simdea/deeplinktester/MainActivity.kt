@@ -303,7 +303,8 @@ fun AppNavigation() {
                             },
                             onRemoveDeeplinkFromCollection = { deeplinkId, collectionId ->
                                 historyViewModel.removeDeeplinkFromCollection(deeplinkId, collectionId)
-                            }
+                            },
+                            snackbarHostState = snackbarHostState
                         )
                     }
                     composable(Screen.Collections.route) {
@@ -319,7 +320,8 @@ fun AppNavigation() {
                                 navController.navigate(Screen.CollectionDetails.createRoute(collectionId))
                             },
                             onUpdateCollection = { historyViewModel.updateCollection(it) },
-                            onDeleteCollection = { historyViewModel.deleteCollection(it) }
+                            onDeleteCollection = { historyViewModel.deleteCollection(it) },
+                            snackbarHostState = snackbarHostState
                         )
                     }
                     composable(
@@ -385,20 +387,22 @@ fun AppNavigation() {
                                 deeplinkWithCollections = currentDeeplinkWithCollections,
                                 allCollections = allCollections,
                                 onNavigateUp = { navController.navigateUp() },
-                                onLaunch = { updatedDeeplink ->
+                                onSaveAndLaunch = { updatedDeeplink, shouldLaunch ->
                                     historyViewModel.updateDeeplink(updatedDeeplink)
-                                    try {
-                                        val launchBrowser = Intent(Intent.ACTION_VIEW).apply {
-                                            data = Uri.parse(updatedDeeplink.deeplink)
-                                            flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                                        }
-                                        context.startActivity(launchBrowser)
-                                    } catch (e: ActivityNotFoundException) {
-                                        scope.launch {
-                                            snackbarHostState.showSnackbar(
-                                                message = context.getString(R.string.activity_not_found_error),
-                                                duration = SnackbarDuration.Short
-                                            )
+                                    if (shouldLaunch) {
+                                        try {
+                                            val launchBrowser = Intent(Intent.ACTION_VIEW).apply {
+                                                data = Uri.parse(updatedDeeplink.deeplink)
+                                                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                                            }
+                                            context.startActivity(launchBrowser)
+                                        } catch (e: ActivityNotFoundException) {
+                                            scope.launch {
+                                                snackbarHostState.showSnackbar(
+                                                    message = context.getString(R.string.activity_not_found_error),
+                                                    duration = SnackbarDuration.Short
+                                                )
+                                            }
                                         }
                                     }
                                 },
@@ -407,9 +411,30 @@ fun AppNavigation() {
                                     navController.navigateUp()
                                 },
                                 onToggleFavorite = { historyViewModel.toggleFavorite(it) },
+                                onSaveAndLaunch = { updatedDeeplink, shouldLaunch ->
+                                    historyViewModel.updateDeeplink(updatedDeeplink)
+                                    if (shouldLaunch) {
+                                        try {
+                                            val launchBrowser = Intent(Intent.ACTION_VIEW).apply {
+                                                data = Uri.parse(updatedDeeplink.deeplink)
+                                                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                                            }
+                                            context.startActivity(launchBrowser)
+                                        } catch (e: ActivityNotFoundException) {
+                                            scope.launch {
+                                                snackbarHostState.showSnackbar(
+                                                    message = context.getString(R.string.activity_not_found_error),
+                                                    duration = SnackbarDuration.Short
+                                                )
+                                            }
+                                        }
+                                    }
+                                },
                                 onAddCollectionAndGetId = historyViewModel::addCollectionAndGetId,
                                 onAddDeeplinkToCollection = { dId, cId -> historyViewModel.addDeeplinkToCollection(dId, cId) },
-                                onRemoveDeeplinkFromCollection = { dId, cId -> historyViewModel.removeDeeplinkFromCollection(dId, cId) }
+                                onRemoveDeeplinkFromCollection = { dId, cId -> historyViewModel.removeDeeplinkFromCollection(dId, cId) },
+                                snackbarHostState = snackbarHostState,
+                                onDataChanged = { historyViewModel.triggerRefresh() }
                             )
                         }
                     }

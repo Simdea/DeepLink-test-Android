@@ -10,7 +10,9 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.simdea.deeplinktester.data.Collection
@@ -34,8 +36,10 @@ fun HistoryScreen(
     onToggleFavorite: (Deeplink) -> Unit,
     onAddCollection: (String) -> Unit,
     onAddDeeplinkToCollection: (Int, Int) -> Unit,
-    onRemoveDeeplinkFromCollection: (Int, Int) -> Unit
+    onRemoveDeeplinkFromCollection: (Int, Int) -> Unit,
+    snackbarHostState: SnackbarHostState
 ) {
+    val scope = rememberCoroutineScope()
     Scaffold(
         topBar = {
             TopAppBar(
@@ -74,22 +78,56 @@ fun HistoryScreen(
                 )
             }
 
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                items(
-                    items = history,
-                    key = { item -> item.deeplink.id }
-                ) { item ->
-                    HistoryItem(
-                        item = item,
-                        onClick = { onItemClick(item.deeplink.id) },
-                        onRetry = { onRetry(item.deeplink) },
-                        onRemove = { onRemove(item.deeplink) },
-                        onToggleFavorite = { onToggleFavorite(item.deeplink) }
-                    )
+            if (history.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            imageVector = Icons.Default.History,
+                            contentDescription = "No History",
+                            modifier = Modifier.size(64.dp),
+                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "Your tested deeplinks will appear here!",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        )
+                    }
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    items(
+                        items = history,
+                        key = { item -> item.deeplink.id }
+                    ) { item ->
+                        HistoryItem(
+                            item = item,
+                            onClick = { onItemClick(item.deeplink.id) },
+                            onRetry = { onRetry(item.deeplink) },
+                            onRemove = {
+                                onRemove(item.deeplink)
+                                scope.launch {
+                                    snackbarHostState.showSnackbar("Deeplink removed from history")
+                                }
+                            },
+                            onToggleFavorite = {
+                                onToggleFavorite(item.deeplink)
+                                scope.launch {
+                                    snackbarHostState.showSnackbar(
+                                        if (item.deeplink.isFavorite) "Removed from favorites" else "Added to favorites"
+                                    )
+                                }
+                            }
+                        )
+                    }
                 }
             }
         }
