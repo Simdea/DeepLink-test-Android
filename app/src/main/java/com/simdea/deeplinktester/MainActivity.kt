@@ -273,6 +273,7 @@ fun AppNavigation() {
                             searchQuery = searchQuery,
                             selectedCollectionId = selectedCollectionId,
                             onItemClick = { deeplinkId ->
+                                historyViewModel.selectDeeplink(deeplinkId)
                                 navController.navigate(Screen.Details.createRoute(deeplinkId))
                             },
                             onToggleShowOnlyFavorites = { historyViewModel.toggleShowOnlyFavorites() },
@@ -296,7 +297,7 @@ fun AppNavigation() {
                             },
                             onRemove = { historyViewModel.removeDeeplink(it) },
                             onToggleFavorite = { historyViewModel.toggleFavorite(it) },
-                            onAddCollection = { name -> scope.launch { historyViewModel.addCollection(name) } },
+                            onAddCollection = { historyViewModel.addCollection(it) },
                             onAddDeeplinkToCollection = { deeplinkId, collectionId ->
                                 historyViewModel.addDeeplinkToCollection(deeplinkId, collectionId)
                             },
@@ -312,7 +313,7 @@ fun AppNavigation() {
                             collections = collections,
                             searchQuery = searchQuery,
                             onSearchQueryChanged = { historyViewModel.onCollectionSearchQueryChanged(it) },
-                            onAddCollection = { name -> scope.launch { historyViewModel.addCollection(name) } },
+                            onAddCollection = { historyViewModel.addCollection(it) },
                             onCollectionClick = { collectionId ->
                                 historyViewModel.onCollectionSelected(collectionId)
                                 navController.navigate(Screen.CollectionDetails.createRoute(collectionId))
@@ -335,6 +336,7 @@ fun AppNavigation() {
                                 deeplinks = deeplinks,
                                 onNavigateUp = { navController.navigateUp() },
                                 onItemClick = { deeplinkId ->
+                                    historyViewModel.selectDeeplink(deeplinkId)
                                     navController.navigate(Screen.Details.createRoute(deeplinkId))
                                 },
                                 onRetry = { deeplink ->
@@ -373,9 +375,8 @@ fun AppNavigation() {
                     composable(
                         route = Screen.Details.route,
                         arguments = listOf(navArgument("deeplinkId") { type = NavType.IntType })
-                    ) { backStackEntry ->
-                        val deeplinkId = backStackEntry.arguments?.getInt("deeplinkId")
-                        val deeplinkWithCollections = historyViewModel.getDeeplinkWithCollectionsById(deeplinkId)
+                    ) {
+                        val deeplinkWithCollections by historyViewModel.selectedDeeplink.collectAsState()
                         val allCollections by historyViewModel.collections.collectAsState()
 
                         if (deeplinkWithCollections != null) {
@@ -405,7 +406,7 @@ fun AppNavigation() {
                                     navController.navigateUp()
                                 },
                                 onToggleFavorite = { historyViewModel.toggleFavorite(it) },
-                                onAddCollection = historyViewModel::addCollection,
+                                onAddCollection = historyViewModel::addCollectionAndGetId,
                                 onAddDeeplinkToCollection = { dId, cId -> historyViewModel.addDeeplinkToCollection(dId, cId) },
                                 onRemoveDeeplinkFromCollection = { dId, cId -> historyViewModel.removeDeeplinkFromCollection(dId, cId) }
                             )
