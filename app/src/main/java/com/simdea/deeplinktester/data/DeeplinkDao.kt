@@ -19,7 +19,7 @@ interface DeeplinkDao {
     suspend fun insert(deeplink: Deeplink)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertCollection(collection: Collection)
+    suspend fun insertCollection(collection: Collection): Long
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertDeeplinkCollectionCrossRef(crossRef: DeeplinkCollectionCrossRef)
