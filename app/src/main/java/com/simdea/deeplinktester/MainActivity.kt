@@ -296,7 +296,7 @@ fun AppNavigation() {
                             },
                             onRemove = { historyViewModel.removeDeeplink(it) },
                             onToggleFavorite = { historyViewModel.toggleFavorite(it) },
-                            onAddCollection = { historyViewModel.addCollection(it) },
+                            onAddCollection = { name -> scope.launch { historyViewModel.addCollection(name) } },
                             onAddDeeplinkToCollection = { deeplinkId, collectionId ->
                                 historyViewModel.addDeeplinkToCollection(deeplinkId, collectionId)
                             },
@@ -312,7 +312,7 @@ fun AppNavigation() {
                             collections = collections,
                             searchQuery = searchQuery,
                             onSearchQueryChanged = { historyViewModel.onCollectionSearchQueryChanged(it) },
-                            onAddCollection = { historyViewModel.addCollection(it) },
+                            onAddCollection = { name -> scope.launch { historyViewModel.addCollection(name) } },
                             onCollectionClick = { collectionId ->
                                 historyViewModel.onCollectionSelected(collectionId)
                                 navController.navigate(Screen.CollectionDetails.createRoute(collectionId))
@@ -405,7 +405,7 @@ fun AppNavigation() {
                                     navController.navigateUp()
                                 },
                                 onToggleFavorite = { historyViewModel.toggleFavorite(it) },
-                                onAddCollection = { name -> historyViewModel.addCollection(name) },
+                                onAddCollection = historyViewModel::addCollection,
                                 onAddDeeplinkToCollection = { dId, cId -> historyViewModel.addDeeplinkToCollection(dId, cId) },
                                 onRemoveDeeplinkFromCollection = { dId, cId -> historyViewModel.removeDeeplinkFromCollection(dId, cId) }
                             )
