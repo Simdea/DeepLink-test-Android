@@ -41,7 +41,7 @@ fun DetailsScreen(
     onLaunch: (Deeplink) -> Unit,
     onDelete: (Deeplink) -> Unit,
     onToggleFavorite: (Deeplink) -> Unit,
-    onAddCollection: (String) -> Unit,
+    onAddCollection: suspend (String) -> Long,
     onAddDeeplinkToCollection: (Int, Int) -> Unit,
     onRemoveDeeplinkFromCollection: (Int, Int) -> Unit
 ) {
@@ -51,28 +51,21 @@ fun DetailsScreen(
     val parameters = remember { mutableStateListOf<Parameter>() }
     var showAddToCollectionDialog by remember { mutableStateOf(false) }
 
+    val scope = rememberCoroutineScope()
     if (showAddToCollectionDialog) {
-        val deeplinkCollectionIds = remember(deeplinkWithCollections) {
-            deeplinkWithCollections.collections.map { it.collectionId }.toSet()
-        }
         AddToCollectionDialog(
             allCollections = allCollections,
-            deeplinkCollectionIds = deeplinkCollectionIds,
             onDismiss = { showAddToCollectionDialog = false },
-            onConfirm = { newSelectedIds, newCollectionName ->
-                // Handle creating a new collection first
-                if (newCollectionName != null) {
-                    onAddCollection(newCollectionName)
+            onConfirm = { selectedCollectionId, newCollectionName ->
+                scope.launch {
+                    if (newCollectionName != null && newCollectionName.isNotBlank()) {
+                        val newCollectionId = onAddCollection(newCollectionName)
+                        onAddDeeplinkToCollection(deeplink.id, newCollectionId.toInt())
+                    } else if (selectedCollectionId != null) {
+                        onAddDeeplinkToCollection(deeplink.id, selectedCollectionId)
+                    }
+                    showAddToCollectionDialog = false
                 }
-
-                // Handle changes in selections
-                val addedIds = newSelectedIds - deeplinkCollectionIds
-                val removedIds = deeplinkCollectionIds - newSelectedIds
-
-                addedIds.forEach { onAddDeeplinkToCollection(deeplink.id, it) }
-                removedIds.forEach { onRemoveDeeplinkFromCollection(deeplink.id, it) }
-
-                showAddToCollectionDialog = false
             }
         )
     }
@@ -217,9 +210,18 @@ fun DetailsScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 deeplinkWithCollections.collections.forEach { collection ->
-                    AssistChip(
+                    InputChip(
+                        selected = false,
                         onClick = { /* Non-interactive, for display only */ },
-                        label = { Text(collection.name) }
+                        label = { Text(collection.name) },
+                        trailingIcon = {
+                            IconButton(
+                                onClick = { onRemoveDeeplinkFromCollection(deeplink.id, collection.collectionId) },
+                                modifier = Modifier.size(18.dp)
+                            ) {
+                                Icon(Icons.Default.Close, contentDescription = "Remove from collection")
+                            }
+                        }
                     )
                 }
             }

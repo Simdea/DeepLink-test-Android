@@ -77,8 +77,8 @@ sealed class Screen(val route: String, val resourceId: Int, val icon: @Composabl
     object Details : Screen("details/{deeplinkId}", R.string.details_screen_title, { Icon(Icons.Filled.Info, contentDescription = null) }) {
         fun createRoute(deeplinkId: Int) = "details/$deeplinkId"
     }
-    object CollectionDetails : Screen("collections/{collectionId}", R.string.collection_details_screen_title, { Icon(Icons.Filled.Info, contentDescription = null) }) {
-        fun createRoute(collectionId: Int) = "collections/$collectionId"
+    object CollectionDetails : Screen("collection-details/{collectionId}", R.string.collection_details_screen_title, { Icon(Icons.Filled.Info, contentDescription = null) }) {
+        fun createRoute(collectionId: Int) = "collection-details/$collectionId"
     }
 }
 
@@ -405,7 +405,7 @@ fun AppNavigation() {
                                     navController.navigateUp()
                                 },
                                 onToggleFavorite = { historyViewModel.toggleFavorite(it) },
-                                onAddCollection = { historyViewModel.addCollection(it) },
+                                onAddCollection = { name -> historyViewModel.addCollection(name) },
                                 onAddDeeplinkToCollection = { dId, cId -> historyViewModel.addDeeplinkToCollection(dId, cId) },
                                 onRemoveDeeplinkFromCollection = { dId, cId -> historyViewModel.removeDeeplinkFromCollection(dId, cId) }
                             )

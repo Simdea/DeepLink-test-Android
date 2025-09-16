@@ -146,10 +146,8 @@ class HistoryViewModel(private val deeplinkDao: DeeplinkDao) : ViewModel() {
             initialValue = emptyList()
         )
 
-    fun addCollection(name: String) {
-        viewModelScope.launch {
-            deeplinkDao.insertCollection(Collection(name = name))
-        }
+    suspend fun addCollection(name: String): Long {
+        return deeplinkDao.insertCollection(Collection(name = name))
     }
 
     fun addDeeplinkToCollection(deeplinkId: Int, collectionId: Int) {
