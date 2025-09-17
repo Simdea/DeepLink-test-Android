@@ -38,7 +38,9 @@ import java.net.URI
 fun UriEditor(
     initialUri: String,
     onUriChanged: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {},
+    showButton: Boolean = false
 ) {
     var baseUri by remember { mutableStateOf("") }
     val parameters = remember { mutableStateListOf<Parameter>() }
@@ -140,6 +142,15 @@ fun UriEditor(
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.align(Alignment.Start)
+            )
+        }
+
+        if (showButton) {
+            Spacer(modifier = Modifier.height(16.dp))
+            PrimaryButton(
+                text = "Launch Deeplink",
+                onClick = onClick,
+                modifier = Modifier.fillMaxWidth()
             )
         }
 

@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,6 +31,7 @@ import com.simdea.deeplinktester.data.Deeplink
 import com.simdea.deeplinktester.data.DeeplinkWithCollections
 import com.simdea.deeplinktester.ui.composables.AddToCollectionDialog
 import com.simdea.deeplinktester.ui.composables.PrimaryButton
+import com.simdea.deeplinktester.ui.composables.SecondaryButton
 import com.simdea.deeplinktester.ui.composables.UriEditor
 import com.simdea.deeplinktester.ui.tester.Parameter
 import kotlinx.coroutines.launch
@@ -128,7 +130,7 @@ fun DetailsScreen(
                         }
                     }) {
                         Icon(
-                            if (deeplink.isFavorite) Icons.Filled.Star else Icons.Outlined.Star,
+                            if (deeplink.isFavorite) Icons.Filled.Star else Icons.Outlined.StarOutline,
                             contentDescription = "Favorite"
                         )
                     }
@@ -211,18 +213,16 @@ fun DetailsScreen(
                     .padding(vertical = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Button(
+                SecondaryButton(
+                    text = "Delete",
                     onClick = {
                         onDelete(deeplink)
                         scope.launch {
                             snackbarHostState.showSnackbar("Deeplink deleted")
                         }
                     },
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
-                ) {
-                    Text("Delete")
-                }
+                    modifier = Modifier.weight(1f)
+                )
                 PrimaryButton(
                     text = "Save & Launch",
                     onClick = { submit(true) },

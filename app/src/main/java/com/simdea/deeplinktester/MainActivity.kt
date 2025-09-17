@@ -3,11 +3,14 @@ package com.simdea.deeplinktester
 import android.app.Application
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardActions
@@ -65,6 +68,7 @@ import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.CollectionsBookmark
 import androidx.compose.material.icons.outlined.Science
+import androidx.core.graphics.toColorInt
 
 sealed class Screen(val route: String, val resourceId: Int, val icon: @Composable () -> Unit) {
     object Splash : Screen("splash", 0, { /* No icon */ })
@@ -92,6 +96,7 @@ val items = listOf(
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        //enableEdgeToEdge()
         MobileAds.initialize(this)
         setContent {
             AppNavigation()
@@ -197,7 +202,7 @@ fun AppNavigation() {
             NavHost(
                 navController = navController,
                 startDestination = Screen.Splash.route,
-                modifier = Modifier.padding(innerPadding)
+                //modifier = Modifier.padding(innerPadding)
             ) {
                 composable(Screen.Splash.route) {
                     when (onboardingCompleted) {

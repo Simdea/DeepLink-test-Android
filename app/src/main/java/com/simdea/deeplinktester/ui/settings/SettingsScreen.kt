@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.sharp.Download
+import androidx.compose.material.icons.sharp.Upload
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -12,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.simdea.deeplinktester.data.preferences.ThemeOption
+import kotlin.text.replaceFirstChar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,7 +47,7 @@ fun SettingsScreen(
                 Column {
                     ThemeOption.entries.forEach { option ->
                         ThemeSettingItem(
-                            text = option.name.replaceFirstChar { it.uppercase() },
+                            text = option.name.lowercase().replaceFirstChar(Char::titlecase),
                             selected = themeOption == option,
                             onClick = { onThemeOptionSelected(option) }
                         )
@@ -64,13 +67,13 @@ fun SettingsScreen(
                 Column {
                     DataSettingItem(
                         text = "Export History",
-                        icon = Icons.Default.ArrowUpward,
+                        icon = Icons.Sharp.Download,
                         onClick = onExport
                     )
                     Divider()
                     DataSettingItem(
                         text = "Import History",
-                        icon = Icons.Default.ArrowDownward,
+                        icon = Icons.Sharp.Upload,
                         onClick = onImport
                     )
                 }

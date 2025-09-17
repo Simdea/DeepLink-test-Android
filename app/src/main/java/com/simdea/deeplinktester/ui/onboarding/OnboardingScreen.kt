@@ -1,5 +1,6 @@
 package com.simdea.deeplinktester.ui.onboarding
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Edit
@@ -14,9 +15,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.simdea.deeplinktester.ui.composables.PrimaryButton
+import com.simdea.deeplinktester.R
+import com.simdea.deeplinktester.ui.theme.DeepLinkTestAndroidTheme
 
 @Composable
 fun OnboardingScreen(onOnboardingCompleted: () -> Unit) {
@@ -28,12 +33,10 @@ fun OnboardingScreen(onOnboardingCompleted: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(64.dp))
-
-            Icon(
-                imageVector = Icons.Outlined.QrCodeScanner, // Placeholder, will find a better one
+            Image(
+                painterResource(R.mipmap.ic_launcher_round),
                 contentDescription = null,
-                modifier = Modifier.size(48.dp),
-                tint = MaterialTheme.colorScheme.primary
+                modifier = Modifier.size(48.dp)
             )
             Spacer(modifier = Modifier.height(16.dp))
             Text(
@@ -80,6 +83,21 @@ fun OnboardingScreen(onOnboardingCompleted: () -> Unit) {
             )
         }
     }
+}
+
+@Preview
+@Composable
+fun OnboardingScreenPreview() {
+    OnboardingScreen(onOnboardingCompleted = {})
+}
+
+@Preview
+@Composable
+fun FeatureItemPreview() {
+    FeatureItem(
+        icon = Icons.Outlined.QrCodeScanner,
+        title = "Scan & Test",
+        description = "Test any URI or scan QR codes instantly.")
 }
 
 @Composable

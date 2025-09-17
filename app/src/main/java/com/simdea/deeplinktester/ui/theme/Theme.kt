@@ -14,7 +14,8 @@ private val DarkColorScheme = darkColorScheme(
     onBackground = DarkTextPrimary,
     onSurface = DarkTextPrimary,
     secondary = TextGray, // Example, can be refined
-    tertiary = Red, // Example
+    error = Red, // Example, can be refined
+    tertiary = Green, // Example
 )
 
 private val LightColorScheme = lightColorScheme(
@@ -25,7 +26,8 @@ private val LightColorScheme = lightColorScheme(
     onBackground = TextBlack,
     onSurface = TextBlack,
     secondary = TextGray,
-    tertiary = Red,
+    error = Red,
+    tertiary = Green,
 )
 
 @Composable

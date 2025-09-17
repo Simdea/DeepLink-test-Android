@@ -75,13 +75,9 @@ fun TesterScreen(
             UriEditor(
                 initialUri = fullUri,
                 onUriChanged = { fullUri = it },
-                modifier = Modifier.weight(1f)
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            PrimaryButton(
-                text = "Launch Deeplink",
+                modifier = Modifier.weight(1f),
                 onClick = submit,
-                modifier = Modifier.fillMaxWidth()
+                showButton = true
             )
         }
     }
