@@ -30,8 +30,10 @@ import com.simdea.deeplinktester.data.Deeplink
 import com.simdea.deeplinktester.data.DeeplinkWithCollections
 import com.simdea.deeplinktester.ui.composables.AddToCollectionDialog
 import com.simdea.deeplinktester.ui.composables.PrimaryButton
+import com.simdea.deeplinktester.ui.composables.UriEditor
 import com.simdea.deeplinktester.ui.tester.Parameter
 import kotlinx.coroutines.launch
+import java.net.URI
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -50,9 +52,7 @@ fun DetailsScreen(
 ) {
     val deeplink = deeplinkWithCollections.deeplink
     var title by remember { mutableStateOf(deeplink.title) }
-    var text by remember { mutableStateOf(deeplink.deeplink) }
-    var isError by remember { mutableStateOf(false) }
-    val parameters = remember { mutableStateListOf<Parameter>() }
+    var fullUri by remember { mutableStateOf(deeplink.deeplink) }
     var showAddToCollectionDialog by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
@@ -78,39 +78,25 @@ fun DetailsScreen(
         )
     }
 
-    fun validate(input: String) {
-        isError = try {
-            if (input.isBlank()) false else {
-                java.net.URI(input)
-                false
-            }
-        } catch (e: Exception) {
-            true
-        }
-    }
-
     LaunchedEffect(deeplink) {
-        val uri = Uri.parse(deeplink.deeplink)
-        text = uri.buildUpon().clearQuery().build().toString()
         title = deeplink.title
-        parameters.clear()
-        uri.queryParameterNames.forEach { key ->
-            parameters.add(Parameter(key, uri.getQueryParameter(key) ?: ""))
-        }
+        fullUri = deeplink.deeplink
     }
 
     val submit = { shouldLaunch: Boolean ->
-        validate(text)
-        if (text.isNotBlank() && !isError) {
-            val uriBuilder = Uri.parse(text).buildUpon()
-            parameters.forEach { param ->
-                if (param.key.isNotBlank()) {
-                    uriBuilder.appendQueryParameter(param.key, param.value)
-                }
+        var isError = false
+        try {
+            if (fullUri.isNotBlank()) {
+                URI(fullUri)
             }
-            val updatedDeeplink = deeplink.copy(title = title, deeplink = uriBuilder.build().toString())
+        } catch (e: Exception) {
+            isError = true
+        }
+
+        if (fullUri.isNotBlank() && !isError) {
+            val updatedDeeplink = deeplink.copy(title = title, deeplink = fullUri)
             onSaveAndLaunch(updatedDeeplink, shouldLaunch)
-            onDataChanged() // Refresh after saving
+            onDataChanged()
         }
     }
 
@@ -157,62 +143,19 @@ fun DetailsScreen(
                 .padding(16.dp)
         ) {
             OutlinedTextField(
-                value = text,
-                onValueChange = {
-                    text = it
-                    validate(it)
-                },
+                value = title,
+                onValueChange = { title = it },
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text("URI") },
-                isError = isError,
+                label = { Text("Title (Optional)") },
                 singleLine = true
             )
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Parameters",
-                    style = MaterialTheme.typography.titleLarge
-                )
-                IconButton(onClick = { parameters.add(Parameter("", "")) }) {
-                    Icon(Icons.Default.Add, contentDescription = "Add Parameter")
-                }
-            }
-
             Spacer(modifier = Modifier.height(8.dp))
 
-            LazyColumn(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                itemsIndexed(parameters) { index, param ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        OutlinedTextField(
-                            value = param.key,
-                            onValueChange = { parameters[index] = param.copy(key = it) },
-                            label = { Text("Key") },
-                            modifier = Modifier.weight(1f)
-                        )
-                        OutlinedTextField(
-                            value = param.value,
-                            onValueChange = { parameters[index] = param.copy(value = it) },
-                            label = { Text("Value") },
-                            modifier = Modifier.weight(1f)
-                        )
-                        IconButton(onClick = { parameters.removeAt(index) }) {
-                            Icon(Icons.Default.Delete, contentDescription = "Delete Parameter", tint = Color.Red)
-                        }
-                    }
-                }
-            }
+            UriEditor(
+                initialUri = fullUri,
+                onUriChanged = { fullUri = it },
+                modifier = Modifier.weight(1f)
+            )
 
             Spacer(modifier = Modifier.height(24.dp))
 
