@@ -21,6 +21,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.simdea.deeplinktester.ui.composables.PrimaryButton
 import com.simdea.deeplinktester.R
+import com.simdea.deeplinktester.ui.composables.AppIcon
 import com.simdea.deeplinktester.ui.theme.DeepLinkTestAndroidTheme
 
 @Composable
@@ -33,11 +34,7 @@ fun OnboardingScreen(onOnboardingCompleted: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(64.dp))
-            Image(
-                painterResource(R.mipmap.ic_launcher_round),
-                contentDescription = null,
-                modifier = Modifier.size(48.dp)
-            )
+            AppIcon()
             Spacer(modifier = Modifier.height(16.dp))
             Text(
                 text = "Deeplink Tester",

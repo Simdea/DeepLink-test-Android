@@ -96,7 +96,7 @@ val items = listOf(
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        //enableEdgeToEdge()
+        enableEdgeToEdge()
         MobileAds.initialize(this)
         setContent {
             AppNavigation()
@@ -202,7 +202,7 @@ fun AppNavigation() {
             NavHost(
                 navController = navController,
                 startDestination = Screen.Splash.route,
-                //modifier = Modifier.padding(innerPadding)
+                modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding())
             ) {
                 composable(Screen.Splash.route) {
                     when (onboardingCompleted) {
