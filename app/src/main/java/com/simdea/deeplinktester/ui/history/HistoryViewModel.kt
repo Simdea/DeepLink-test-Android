@@ -195,6 +195,9 @@ class HistoryViewModel(private val deeplinkDao: DeeplinkDao) : ViewModel() {
 
     fun deleteCollection(collection: Collection) {
         viewModelScope.launch {
+            if (collection.collectionId == _selectedCollectionId.value) {
+                _selectedCollectionId.value = null
+            }
             deeplinkDao.deleteCollection(collection)
         }
     }
