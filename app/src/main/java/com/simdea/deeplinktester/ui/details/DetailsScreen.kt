@@ -63,6 +63,7 @@ fun DetailsScreen(
             allCollections = allCollections,
             onDismiss = { showAddToCollectionDialog = false },
             onConfirm = { selectedCollectionId, newCollectionName ->
+                showAddToCollectionDialog = false
                 scope.launch {
                     if (newCollectionName != null && newCollectionName.isNotBlank()) {
                         val newCollectionId = onAddCollectionAndGetId(newCollectionName)
@@ -73,7 +74,6 @@ fun DetailsScreen(
                         val collectionName = allCollections.find { it.collectionId == selectedCollectionId }?.name
                         snackbarHostState.showSnackbar("Added to collection '$collectionName'")
                     }
-                    showAddToCollectionDialog = false
                     onDataChanged()
                 }
             }

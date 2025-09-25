@@ -131,7 +131,6 @@ fun AddToCollectionDialog(
                     } else {
                         onConfirm(selectedCollection?.collectionId, null)
                     }
-                    onDismiss()
                 },
                 enabled = (showNewCollectionField && newCollectionName.isNotBlank()) || (!showNewCollectionField && selectedCollection != null)
             ) {
