@@ -5,6 +5,7 @@ import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.graphics.Color
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
@@ -97,6 +98,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            window.isNavigationBarContrastEnforced = false
+        }
         MobileAds.initialize(this)
         setContent {
             AppNavigation()
@@ -118,6 +122,21 @@ fun AppNavigation() {
         ThemeOption.LIGHT -> false
         ThemeOption.DARK -> true
         ThemeOption.SYSTEM -> isSystemInDarkTheme()
+    }
+
+    val activity = context as? ComponentActivity
+    DisposableEffect(useDarkTheme) {
+        activity?.enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.auto(
+                Color.TRANSPARENT,
+                Color.TRANSPARENT
+            ) { useDarkTheme },
+            navigationBarStyle = SystemBarStyle.auto(
+                Color.TRANSPARENT,
+                Color.TRANSPARENT
+            ) { useDarkTheme }
+        )
+        onDispose {}
     }
 
     val navController = rememberNavController()
@@ -202,7 +221,9 @@ fun AppNavigation() {
             NavHost(
                 navController = navController,
                 startDestination = Screen.Splash.route,
-                modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding())
+                modifier = Modifier
+                    .padding(bottom = innerPadding.calculateBottomPadding())
+                    .consumeWindowInsets(PaddingValues(bottom = innerPadding.calculateBottomPadding()))
             ) {
                 composable(Screen.Splash.route) {
                     when (onboardingCompleted) {

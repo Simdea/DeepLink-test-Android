@@ -97,6 +97,8 @@ fun CollectionsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .consumeWindowInsets(paddingValues)
+                .imePadding()
         ) {
             OutlinedTextField(
                 value = searchQuery,
